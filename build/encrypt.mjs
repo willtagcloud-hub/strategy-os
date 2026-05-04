@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const SRC = path.join(ROOT, "presentations");
-const OUT = path.join(ROOT, "dist");
+const OUT = path.join(ROOT, "docs");
 const TEMPLATE_PATH = path.join(__dirname, "template.html");
 
 const ITERATIONS = 600_000;

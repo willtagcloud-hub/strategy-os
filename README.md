@@ -11,7 +11,7 @@ The published site is encrypted client-side and gated by a password.
 - Source decks live in `presentations/` (plain HTML).
 - A Node build script encrypts each HTML file with **AES-256-GCM**, using a key
   derived from the site password via **PBKDF2-SHA256 (600,000 iterations)**.
-- Output lives in `dist/` and is what GitHub Pages serves.
+- Output lives in `docs/` and is what GitHub Pages serves (configured to publish from `main` branch `/docs` folder).
 - Visitors see a password prompt on first load; after correct entry the
   derived session is cached in `sessionStorage` for cross-deck navigation.
 
@@ -27,27 +27,25 @@ Or on Windows PowerShell:
 $env:SITE_PASSWORD="your-password"; node build/encrypt.mjs
 ```
 
-This generates the `dist/` folder ready for static hosting.
+This generates the `docs/` folder ready for static hosting.
 
 ## Deploy
 
-A GitHub Actions workflow builds `dist/` and publishes to GitHub Pages on
-every push to `main`. The site password is provided through the
-`SITE_PASSWORD` repository secret.
+GitHub Pages is configured to serve the `docs/` folder of the `main` branch.
+Re-run the encryption build locally and push to deploy a new version.
 
 ## Local preview
 
 ```bash
-npx serve dist
+npx serve docs
 ```
 
-Or open `dist/index.html` directly. The first load asks for the password.
+Or open `docs/index.html` directly. The first load asks for the password.
 
 ## Layout
 
 ```
-presentations/      Plain HTML source decks
-build/              Encryption tooling
-dist/               Build output (encrypted, ready to publish)
-.github/workflows/  CI/CD pipeline for GitHub Pages
+presentations/  Plain HTML source decks
+build/          Encryption tooling
+docs/           Build output (encrypted, served by GitHub Pages)
 ```
