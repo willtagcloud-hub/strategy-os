@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Insurance — Tech Deep Dive</title>
+<link rel="stylesheet" href="./assets/styles.css" />
+<style>
+  pre.codeblock {
+    background: #0b1226;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #c8d3ee;
+    font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    overflow: auto;
+    margin: 10px 0 4px;
+  }
+  pre.codeblock .c { color: #6f7aa1; }
+  pre.codeblock .k { color: #fb7185; }
+  pre.codeblock .s { color: #a7f3d0; }
+  pre.codeblock .n { color: #f43f5e; }
+  .gantt-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; margin: 4px 0; font-size: 13px; }
+  .gantt-bar { background: #1a2348; border-radius: 4px; height: 16px; position: relative; overflow: hidden; }
+  .gantt-bar > span { position: absolute; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 4px; }
+</style>
+</head>
+<body class="theme-insurance">
+
+<div class="progress" id="progress"></div>
+<div class="topbar">
+  <div class="brand">Strategy OS · <b>Insurance Tech Deep Dive</b></div>
+  <div style="display:flex; gap:8px; pointer-events:auto;">
+    <a class="home-link" href="./insurance.html" title="Strategy view">← Strategy deck</a>
+    <a class="home-link" href="./index.html">All decks ↑</a>
+  </div>
+</div>
+
+<main class="deck">
+
+  <!-- 1 -->
+  <section class="slide title-slide">
+    <div class="eyebrow">Insurance · Tech blueprint</div>
+    <h1>Policy Match — Engineering Plan</h1>
+    <p class="tagline">Multi-line lead-gen + Pay-Per-Call platform. Sub-1-minute speed-to-contact, Twilio Studio warm transfers, TCPA-grade audit, ClickHouse ping-tree analytics, and an AEP scaling playbook.</p>
+    <div class="row" style="margin-top: 20px;">
+      <span class="tag">Workers + DO</span>
+      <span class="tag">Twilio Studio · Pay-Per-Call</span>
+      <span class="tag">TCPA + CMS</span>
+      <span class="tag">AEP-ready</span>
+    </div>
+    <p class="subnote">Companion to the strategy deck. Use ← / → to navigate.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 02 · Architecture</div>
+    <h2>System architecture</h2>
+    <pre class="codeblock"><span class="c">[Paid: Google Search · Meta · Bing]</span>
+        ↓
+[<span class="k">Cloudflare</span> WAF + Bot Management]
+        ↓
+[<span class="k">Next.js</span> PWA on <span class="k">Vercel</span> (US edge)]
+   ├─ /quote/{auto|home|life|health}
+   ├─ /medicare (separate brand · CMS-compliant)
+   └─ /api/*
+        ↓
+[<span class="k">Match Engine</span> on Cloudflare <span class="k">Workers</span> + <span class="k">Durable Objects</span>]
+   ├─ Validate + score + fraud filter
+   ├─ JSON-Logic buyer rules
+   ├─ Parallel ping-tree to N buyers (P95 ≤ 1.5 s)
+   └─ For "call" SKUs → <span class="k">Twilio Studio</span> warm transfer
+        ↓
+[<span class="k">Postgres</span> + <span class="k">Redis</span> + <span class="k">R2</span> immutable consent + <span class="k">ClickHouse</span> bid log]
+        ↓
+   ├─ <span class="k">n8n</span>     → drips, dispositions
+   ├─ <span class="k">HubSpot</span> → concierge for bind/upsell
+   ├─ <span class="k">Twilio</span>  → voice + SMS + Studio + recording
+   └─ Buyer APIs / SFTP → ping-post + bind postbacks
+        ↓
+[Server-side: GA4 + GTM Server, Meta CAPI,
+ Google Enhanced Conv. for Leads, Bing UET/CAPI, BigQuery]</pre>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 03 · Tech stack</div>
+    <h2>Stack at a glance</h2>
+    <table>
+      <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Match engine</td><td>Cloudflare Workers + Durable Objects</td><td>Sub-second ping-tree, atomic per-lead state</td></tr>
+        <tr><td>Voice / SMS</td><td>Twilio Programmable Voice + Studio</td><td>Warm transfers + IVRs + recording</td></tr>
+        <tr><td>Pay-Per-Call routing</td><td>Twilio Studio + custom router (or Ringba)</td><td>Per-buyer DIDs, billable thresholds</td></tr>
+        <tr><td>Bot mgmt / WAF</td><td>Cloudflare Pro + Bot Management</td><td>Fraud filter for finance + insurance forms</td></tr>
+        <tr><td>Framework</td><td>Next.js 14 (App Router)</td><td>Per-line landing pages, reuses platform</td></tr>
+        <tr><td>DB / RLS</td><td>Supabase Postgres</td><td>Same infra as Loans</td></tr>
+        <tr><td>Bid analytics</td><td>ClickHouse Cloud</td><td>Per-bid, per-buyer, per-line queries</td></tr>
+        <tr><td>Audit store</td><td>Cloudflare R2 (write-once)</td><td>Immutable consent records</td></tr>
+        <tr><td>Workflow</td><td>n8n self-hosted</td><td>Drip + disposition routing</td></tr>
+        <tr><td>CRM</td><td>HubSpot</td><td>Concierge for high-value lines</td></tr>
+        <tr><td>Analytics</td><td>GA4 + GTM Server + BigQuery</td><td>Server-side first</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 04 · PWA</div>
+    <h2>Per-line PWA paths</h2>
+    <ul>
+      <li>One framework, per-line landing pages: <code>/quote/auto</code>, <code>/quote/home</code>, <code>/quote/life</code>, <code>/quote/health</code>.</li>
+      <li><strong>Medicare lives on a separate subdomain</strong> with CMS-compliant copy and SOA capture before plan-specific content.</li>
+      <li>Same quiz engine as Visa/Loans/GLP-1 with per-line configs.</li>
+      <li>Strict CSP nonces; never cache <code>/api/match</code>, <code>/api/call</code>, or quote results.</li>
+      <li>Click-to-call CTA prominence on result pages: <code>tel:</code> link + server-pushed warm-transfer flow when an agent is online.</li>
+    </ul>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 05 · Match flows</div>
+    <h2>Form match + warm-transfer call</h2>
+    <pre class="codeblock"><span class="c">// POST /api/match (form lead)</span>
+validate → fraud_score (Twilio Lookup + Bot Mgmt)
+lead = persist(payload + consent)
+candidates = filter(buyers, lead)
+bids = Promise.allSettled(parallel pings, 800ms timeout)
+winner = pickWinner(bids, rules)
+if winner: post_lead(winner)
+sendEvent(<span class="s">"lead_submitted"</span>)
+
+<span class="c">// POST /api/call/request (warm transfer)</span>
+agent_pool = pickPool(line, state, hours)
+twilio.studio.execute(<span class="s">"warm_transfer_flow"</span>, { lead, agent_pool })
+<span class="c">//   1. Dial agent → press 1 to confirm</span>
+<span class="c">//   2. Bridge consumer + agent</span>
+<span class="c">//   3. Record (with disclosure)</span>
+<span class="c">//   4. Disposition recorded via webhook</span>
+sendEvent(<span class="s">"call_initiated"</span>)</pre>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 06 · Buyers</div>
+    <h2>Buyers as data, not code</h2>
+    <pre class="codeblock"><span class="c">-- Postgres</span>
+<span class="k">create table</span> buyers (
+  id, slug, name, line, endpoint, auth_type,
+  request_template <span class="k">jsonb</span>,
+  response_path <span class="k">text</span>,
+  rules <span class="k">jsonb</span>,
+  payout_model <span class="k">text</span>,         <span class="c">-- ping_post | call | hybrid</span>
+  per_call_payout_cents <span class="k">int</span>,
+  active <span class="k">bool</span>, priority <span class="k">int</span>
+);</pre>
+    <ul>
+      <li>JSON-Logic evaluates <code>rules</code> against each lead (line, state, age, etc.).</li>
+      <li>Pay-Per-Call: per-buyer Twilio DIDs; payout triggers when call duration ≥ buyer's billable threshold.</li>
+      <li>Adding a buyer or line = config insert + map fields. No code deploy.</li>
+    </ul>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 07 · Data model</div>
+    <h2>Insurance-specific tables</h2>
+    <pre class="codeblock"><span class="k">insurance_leads</span>(id, user_id, line, payload <span class="k">jsonb</span>,
+                state, zip, consent_text, consent_ip,
+                consent_user_agent, consent_recorded_at,
+                consent_audio_url, soa_captured_at,
+                created_at)
+
+<span class="k">calls_outbound</span>(id, lead_id, buyer_id, twilio_call_sid,
+               duration_sec, billable, recording_url,
+               disposition, created_at)
+
+<span class="k">policy_binds</span>(id, lead_id, buyer_id, bound_at,
+             premium_cents, bonus_payout_cents, raw)
+
+<span class="k">consent_ledger</span>(id, user_id, type, channel, text_shown,
+               payload_hash, ip, user_agent,
+               audio_url, recorded_at)             <span class="c">-- append-only</span>
+
+<span class="c">-- ClickHouse</span>
+<span class="k">bids</span>(ts, lead_id, buyer_id, line,
+     bid_amount_cents, accepted, rejected_reason, latency_ms)</pre>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 08 · API surface</div>
+    <h2>V1 endpoints</h2>
+    <table>
+      <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>POST</td><td><code>/api/quiz/answer</code></td><td>Step persistence + scoring</td></tr>
+        <tr><td>POST</td><td><code>/api/match</code></td><td>Form-lead match (≤ 1.5 s P95)</td></tr>
+        <tr><td>POST</td><td><code>/api/call/request</code></td><td>Initiate warm-transfer flow</td></tr>
+        <tr><td>POST</td><td><code>/api/webhooks/twilio/voice/:event</code></td><td>Studio status callbacks</td></tr>
+        <tr><td>POST</td><td><code>/api/webhooks/buyers/:slug</code></td><td>Bind / billable confirmation</td></tr>
+        <tr><td>POST</td><td><code>/api/optout</code></td><td>DNC + revocation</td></tr>
+        <tr><td>POST</td><td><code>/api/voice/consent</code></td><td>Voice consent capture</td></tr>
+        <tr><td>POST</td><td><code>/api/medicare/soa</code></td><td>Scope of Appointment capture</td></tr>
+        <tr><td>POST</td><td><code>/api/conversions</code></td><td>Server-side fanout</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 09 · Tracking</div>
+    <h2>Server-side conversions + reconciliation</h2>
+    <pre class="codeblock">view_quote_landing → quiz_started → quiz_completed (line, state)
+→ phone_verified → <span class="n">consent_captured</span> → match_requested
+→ match_won → call_initiated → call_connected
+→ <span class="n">call_billable</span>          <span class="c">// primary call SKU</span>
+→ <span class="n">buyer_accepted</span>         <span class="c">// primary form SKU</span>
+→ <span class="n">policy_bound</span>           <span class="c">// bonus revenue</span>
+→ optout</pre>
+    <ul>
+      <li>Meta CAPI: <code>consent_captured</code> → switch to <code>call_billable</code> / <code>buyer_accepted</code> at ≥ 50/wk.</li>
+      <li>Google Enhanced Conversions for Leads on <code>policy_bound</code> with value-based bidding.</li>
+      <li>Bing UET + Conversion API for Microsoft Ads (Phase 2).</li>
+      <li>Daily reconciliation: internal vs buyer-reported counts; &gt; 5% variance → Slack alert.</li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 10 · AEP playbook</div>
+    <h2>Annual Enrollment Period (Oct 15 - Dec 7)</h2>
+    <ul>
+      <li><strong>Capacity:</strong> 3-5x normal traffic; surge agent pool via partner call center.</li>
+      <li><strong>Creative bank:</strong> CMS-compliant copy bank prepared by Sept 1; counsel-reviewed.</li>
+      <li><strong>SOA capture:</strong> mandatory before plan-specific discussion; stored in <code>consent_ledger</code> with type=<code>soa</code>.</li>
+      <li><strong>Routing:</strong> in-house agents first, partner overflow second; tracked separately.</li>
+      <li><strong>Real-time dashboard</strong> for daily ops review during AEP.</li>
+      <li><strong>Post-AEP plan:</strong> shift budget to Auto/Home/Life starting Dec 8 to smooth seasonality.</li>
+    </ul>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 11 · Compliance</div>
+    <h2>TCPA + state + CMS guardrails</h2>
+    <ul class="checklist">
+      <li>Express written consent captured with: user data, exact disclosure text, timestamp, IP, UA.</li>
+      <li>Consent stored in <code>consent_ledger</code> + replicated to R2 write-once.</li>
+      <li>Specific buyer disclosure at consent: every potential buyer named with link.</li>
+      <li>Voice consent path via Twilio <code>&lt;Record&gt;</code>; documented retention.</li>
+      <li>Two-party consent states (CA, FL, ...) → verbal disclosure at call start.</li>
+      <li>One-click opt-out + daily DNC scrub vs National DNC + internal + partner feeds.</li>
+      <li>State licensing verification of partners pre-launch + quarterly recheck.</li>
+      <li>Medicare creative review + SOA + no misleading TPMO claims; separate brand domain.</li>
+      <li>Per-line ad accounts; pixel separation; warmed accounts.</li>
+      <li>Pen test mandatory pre-launch and annually.</li>
+    </ul>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 12 · Team &amp; cost</div>
+    <h2>People + monthly recurring (off-AEP)</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>People (V1, blended offshore)</h4>
+        <table>
+          <tbody>
+            <tr><td>Tech lead (lead-gen / PPC exp.)</td><td>1.0 FTE</td></tr>
+            <tr><td>Senior full-stack</td><td>1.0</td></tr>
+            <tr><td>FE / CRO</td><td>0.5</td></tr>
+            <tr><td>Compliance / counsel</td><td>0.5</td></tr>
+            <tr><td>Media buyer (Search-first)</td><td>1.0</td></tr>
+            <tr><td>Telephony specialist</td><td>0.5</td></tr>
+            <tr><td>Call-center liaison</td><td>0.5</td></tr>
+            <tr><td>Data analyst</td><td>0.5</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD 22-32k / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h4>Recurring infra / SaaS</h4>
+        <table>
+          <tbody>
+            <tr><td>Vercel + Cloudflare (Workers/DO)</td><td>70-250</td></tr>
+            <tr><td>Supabase Pro</td><td>25-100</td></tr>
+            <tr><td>ClickHouse Cloud</td><td>50-150</td></tr>
+            <tr><td>Twilio (voice + SMS + Studio)</td><td>400-2,500</td></tr>
+            <tr><td>HubSpot (concierge)</td><td>0-30</td></tr>
+            <tr><td>Sentry / BetterStack</td><td>50-200</td></tr>
+            <tr><td>GTM Server (Cloud Run)</td><td>30-80</td></tr>
+            <tr><td>BigQuery</td><td>30-100</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD ~700 - 3,400 / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="muted" style="margin-top: 6px;">AEP surge (Oct-Dec): <strong>+USD 8-25k/mo</strong> for partner agents + ops lead.</p>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 13 · Timeline</div>
+    <h2>8 weeks to soft launch</h2>
+    <div>
+      <div class="gantt-row"><div>W1 IaC + per-line configs</div><div class="gantt-bar"><span style="left:0%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W2 Buyer table + 2 form integrations</div><div class="gantt-bar"><span style="left:12.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W3 Match engine (Workers/DO) + bid log</div><div class="gantt-bar"><span style="left:25%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W4 TCPA consent + opt-out + DNC</div><div class="gantt-bar"><span style="left:37.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W5 Twilio Studio warm transfer + 1 call buyer</div><div class="gantt-bar"><span style="left:50%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W6 Postbacks + reconciliation + GA4 + GTM</div><div class="gantt-bar"><span style="left:62.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W7 Medicare path (separate domain) + SOA</div><div class="gantt-bar"><span style="left:75%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W8 Counsel sign-off, pen test, soft launch (Auto + Medicare in 3 states)</div><div class="gantt-bar"><span style="left:87.5%; width:12.5%"></span></div></div>
+    </div>
+    <p class="muted">Phase 2: add Home + Life; AEP prep complete by Aug 31; load-test 3-5x baseline.</p>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 14 · KPIs &amp; risks</div>
+    <h2>What we watch + top risks</h2>
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Match P95</div><div class="value">≤ 1.5 s</div></div>
+      <div class="kpi"><div class="label">Speed-to-contact</div><div class="value">&lt; 1 min</div></div>
+      <div class="kpi"><div class="label">Call-connect</div><div class="value">≥ 35%</div></div>
+      <div class="kpi"><div class="label">Acceptance (form)</div><div class="value">≥ 85%</div></div>
+      <div class="kpi"><div class="label">Day-7 ROAS off-AEP</div><div class="value">≥ 1.3x</div></div>
+      <div class="kpi"><div class="label">Day-7 ROAS AEP</div><div class="value">≥ 1.8x</div></div>
+    </div>
+    <h3 style="margin-top: 16px;">Top risks</h3>
+    <ul>
+      <li><strong>TCPA litigation</strong> → counsel-reviewed disclosures, immutable ledger, voice consent.</li>
+      <li><strong>CMS / Medicare scrutiny</strong> → separate brand, SOA capture, every Medicare creative reviewed.</li>
+      <li><strong>Buyer policy changes</strong> → 4-6 buyers per line, dynamic routing.</li>
+      <li><strong>Lead fraud</strong> → Cloudflare Bot Mgmt + Twilio Lookup + phone verify.</li>
+      <li><strong>Post-AEP traffic crash</strong> → mix lines (Auto / Home / Life) for seasonality smoothing.</li>
+    </ul>
+    <p class="muted" style="margin-top: 14px;">Full engineering spec lives in <code>plans/insurance-tech-spec.md</code> in the repo.</p>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 15 · Next steps</div>
+    <h2>Decisions to unblock kickoff</h2>
+    <ol>
+      <li>Twilio Studio + custom router vs Ringba for Pay-Per-Call.</li>
+      <li>Initial line mix (recommended: Auto + Medicare).</li>
+      <li>Build vs license a softphone for in-house agents.</li>
+      <li>Call-center surge partner shortlist for AEP.</li>
+      <li>Bing/Microsoft Ads in V1 or Phase 2.</li>
+      <li>Brand structure: parent + sub-brands or fully isolated brands.</li>
+    </ol>
+  </section>
+
+</main>
+
+<div class="controls">
+  <button class="btn" id="prevBtn">←</button>
+  <div class="counter" id="counter">1 / 15</div>
+  <button class="btn btn-primary" id="nextBtn">Next →</button>
+</div>
+
+<script src="./assets/deck.js"></script>
+</body>
+</html>

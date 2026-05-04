@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GLP-1 — Tech Deep Dive</title>
+<link rel="stylesheet" href="./assets/styles.css" />
+<style>
+  pre.codeblock {
+    background: #0b1226;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #c8d3ee;
+    font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    overflow: auto;
+    margin: 10px 0 4px;
+  }
+  pre.codeblock .c { color: #6f7aa1; }
+  pre.codeblock .k { color: #34d399; }
+  pre.codeblock .s { color: #a7f3d0; }
+  pre.codeblock .n { color: #fbbf24; }
+  .gantt-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; margin: 4px 0; font-size: 13px; }
+  .gantt-bar { background: #1a2348; border-radius: 4px; height: 16px; position: relative; overflow: hidden; }
+  .gantt-bar > span { position: absolute; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 4px; }
+</style>
+</head>
+<body class="theme-glp1">
+
+<div class="progress" id="progress"></div>
+<div class="topbar">
+  <div class="brand">Strategy OS · <b>GLP-1 Tech Deep Dive</b></div>
+  <div style="display:flex; gap:8px; pointer-events:auto;">
+    <a class="home-link" href="./glp1.html" title="Strategy view">← Strategy deck</a>
+    <a class="home-link" href="./index.html">All decks ↑</a>
+  </div>
+</div>
+
+<main class="deck">
+
+  <!-- 1 -->
+  <section class="slide title-slide">
+    <div class="eyebrow">GLP-1 · Tech blueprint</div>
+    <h1>Medical Weight Eligibility — Engineering Plan</h1>
+    <p class="tagline">Strict white-hat telehealth referral PWA: HIPAA-aware data handling, provider matching, reminder engine, server-side conversions optimized to attended consult and Rx-start, not raw form fills.</p>
+    <div class="row" style="margin-top: 20px;">
+      <span class="tag">Next.js · Supabase</span>
+      <span class="tag">Twilio (BAA)</span>
+      <span class="tag">Cal.com · n8n</span>
+      <span class="tag">Server-side conversions</span>
+    </div>
+    <p class="subnote">Companion to the strategy deck. Use ← / → to navigate.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 02 · Architecture</div>
+    <h2>System architecture</h2>
+    <pre class="codeblock"><span class="c">[Paid: Meta · TikTok · Google Search]</span>
+        ↓
+[<span class="k">Cloudflare</span> WAF + Bot Management]
+        ↓
+[<span class="k">Next.js</span> PWA on <span class="k">Vercel</span> (US edge)]
+   ├─ /learn (education prelander, ISR)
+   ├─ /quiz · /book · /me
+   └─ /api/*
+        ↓
+[<span class="k">Postgres</span> (Supabase) + <span class="k">Redis</span> (Upstash) + <span class="k">R2</span> PHI vault]
+        ↓
+   ├─ <span class="k">n8n</span>     → reminder schedules, drips, dispositions
+   ├─ <span class="k">Twilio</span>  → SMS/WA/voice + recording (BAA signed)
+   ├─ <span class="k">Cal.com</span> → provider calendars (self-hosted)
+   ├─ <span class="k">HubSpot</span> → optional concierge inbox
+   └─ Provider HTTPS APIs → consult outcome + Rx-start postbacks
+        ↓
+[Server-side: GA4 + GTM Server, Meta CAPI (no PHI),
+ Google Enhanced Conv. for Leads, BigQuery + Metabase]</pre>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 03 · Tech stack</div>
+    <h2>Stack at a glance</h2>
+    <table>
+      <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Framework</td><td>Next.js 14 (App Router)</td><td>PWA + ISR + reuses platform engine</td></tr>
+        <tr><td>Hosting</td><td>Vercel + Cloudflare</td><td>US edge POPs, WAF + bot mgmt</td></tr>
+        <tr><td>DB / RLS</td><td>Supabase Postgres</td><td>pgsodium for PHI fields</td></tr>
+        <tr><td>PHI vault</td><td>Cloudflare R2 (envelope encryption)</td><td>Append-only, signed URLs</td></tr>
+        <tr><td>Cache / queue</td><td>Upstash Redis + QStash</td><td>Reminder scheduling</td></tr>
+        <tr><td>Workflow</td><td>n8n self-hosted (Railway)</td><td>Reminders, dispositions</td></tr>
+        <tr><td>Telephony</td><td>Twilio (BAA signed)</td><td>SMS/WA/voice for reminders</td></tr>
+        <tr><td>Booking</td><td>Cal.com self-hosted</td><td>Owns the data, integrates with provider calendars</td></tr>
+        <tr><td>CRM</td><td>HubSpot Sales Starter (optional)</td><td>Manual concierge for no-shows</td></tr>
+        <tr><td>Analytics</td><td>GA4 + GTM Server + BigQuery</td><td>Server-side first; no PHI in pixels</td></tr>
+        <tr><td>IaC / CI</td><td>Terraform + GitHub Actions</td><td>Same monorepo</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 04 · PWA</div>
+    <h2>PWA implementation specifics</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>Manifest + install</h4>
+        <ul>
+          <li>Standalone, portrait, neutral health/education category.</li>
+          <li>No medical-condition badge (platform policy compliance).</li>
+          <li>Custom install prompt only on engaged users.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Service worker (Workbox)</h4>
+        <ul>
+          <li>Pre-cache app shell + fonts.</li>
+          <li><strong>Never cache</strong> <code>/api/quiz/*</code>, <code>/api/eligibility</code>, <code>/api/match-provider</code>.</li>
+          <li>Background Sync for booking confirmation form (flaky 4G).</li>
+          <li>Encrypted IndexedDB resume of quiz drafts (WebCrypto).</li>
+          <li>Strict CSP nonces; no inline scripts; HSTS preload.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 05 · Funnel</div>
+    <h2>Eligibility screener (≤ 90 s)</h2>
+    <ol>
+      <li>Goal (lose weight, manage condition with provider, learn).</li>
+      <li>Sex at birth (clinical relevance).</li>
+      <li>Date of birth (gates minors).</li>
+      <li>Height + weight → BMI computed server-side.</li>
+      <li>Diagnoses (multi-select clinical flags).</li>
+      <li>Medications + allergies.</li>
+      <li>Past weight management attempts.</li>
+      <li>Insurance status.</li>
+      <li>State (US) — for licensed-provider matching.</li>
+      <li>Phone + email + HIPAA-style consent and telehealth disclosures.</li>
+    </ol>
+    <p class="muted">Output is a <strong>non-diagnostic suggestion</strong> + a list of matched providers + a clear next-step CTA. No outcome guarantees, ever.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 06 · Data model</div>
+    <h2>Health-specific tables (delta over platform)</h2>
+    <pre class="codeblock"><span class="k">health_intake</span>(id, user_id, sex_at_birth, dob, height_cm,
+              weight_kg, bmi, conditions, meds, allergies,
+              insurance_status, state, collected_at)
+
+<span class="k">providers</span>(id, slug, name, legal_name, states, languages,
+          insurance_accepted, api <span class="k">jsonb</span>, active)
+
+<span class="k">provider_slots</span>(id, provider_id, starts_at, ends_at, status,
+               hold_token, hold_expires_at)
+
+<span class="k">consults</span>(id, user_id, provider_id, slot_id, status,
+         booked_at, attended_at, outcome, notes)
+
+<span class="k">provider_postbacks</span>(id, provider_id, consult_id, event,
+                   amount_cents, raw, received_at)
+
+<span class="k">phi_access_log</span>(id, actor, action, user_id, consult_id,
+               fields, ip, recorded_at)            <span class="c">-- append-only</span></pre>
+    <p class="muted">PII / PHI columns column-encrypted with pgsodium. RLS default-deny. PHI reads are logged with actor + fields touched.</p>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 07 · API surface</div>
+    <h2>V1 endpoints</h2>
+    <table>
+      <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>POST</td><td><code>/api/quiz/answer</code></td><td>Step persistence + soft scoring</td></tr>
+        <tr><td>POST</td><td><code>/api/eligibility</code></td><td>BMI + non-diagnostic suggestion</td></tr>
+        <tr><td>POST</td><td><code>/api/match-provider</code></td><td>State + insurance + slot availability</td></tr>
+        <tr><td>POST</td><td><code>/api/booking/hold</code></td><td>Reserve a slot for 5 min</td></tr>
+        <tr><td>POST</td><td><code>/api/booking/confirm</code></td><td>Confirm + schedule reminders</td></tr>
+        <tr><td>POST</td><td><code>/api/booking/reschedule</code></td><td>Free old slot, hold new one</td></tr>
+        <tr><td>POST</td><td><code>/api/conversions</code></td><td>Server-side fanout (no PHI)</td></tr>
+        <tr><td>POST</td><td><code>/api/webhooks/partner/:slug</code></td><td>Provider postbacks (HMAC)</td></tr>
+        <tr><td>POST</td><td><code>/api/webhooks/twilio/sms</code></td><td>RESCH / STOP handling</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 08 · Tracking</div>
+    <h2>Server-side conversions — privacy-careful</h2>
+    <pre class="codeblock">view_learn → quiz_started → quiz_completed
+→ provider_matched → slot_held → booking_confirmed
+→ reminder_sent → <span class="n">consult_attended</span>     <span class="c">// primary opt event</span>
+→ <span class="n">rx_started</span>             <span class="c">// high-value backend</span>
+→ <span class="n">refill_dispensed</span>       <span class="c">// LTV signal</span>
+→ dropped | optout</pre>
+    <ul>
+      <li>Hash SHA-256 user identifiers; <strong>never</strong> send health attributes / BMI to ad platforms.</li>
+      <li>Optimize Meta on <code>booking_confirmed</code> until ≥ 30/wk per ad set, then switch to <code>consult_attended</code>.</li>
+      <li>Google Enhanced Conversions for Leads on <code>rx_started</code> with value-based bidding.</li>
+      <li>BigQuery joins consults + postbacks + payments → 60-day cohort LTV by ad source.</li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 09 · Reminder engine</div>
+    <h2>The single biggest ROI lever</h2>
+    <pre class="codeblock"><span class="c">// on booking_confirmed</span>
+QStash schedule T-24h: send_sms_reminder(consult_id)
+QStash schedule T-2h:  send_push_reminder(consult_id)
+QStash schedule T-30m: send_sms_link(consult_id, video_link)
+
+<span class="c">// on user reply "RESCH"</span>
+open /book?consult_id=...
+
+<span class="c">// on user reply "STOP"</span>
+mark optout, halt all jobs</pre>
+    <ul>
+      <li>Quiet hours per user timezone.</li>
+      <li>Reminder copy A/B tested via Flagsmith feature flag.</li>
+      <li>Voice fallback for users without smartphones.</li>
+      <li>Target: lift show-up rate from ~40% baseline to <strong>≥ 65%</strong>.</li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 10 · Provider integration</div>
+    <h2>Partners as data, not code</h2>
+    <pre class="codeblock"><span class="c">-- providers.api jsonb example</span>
+{
+  <span class="s">"endpoint"</span>: <span class="s">"https://api.partnerclinic.com/v1/consults"</span>,
+  <span class="s">"auth"</span>: <span class="s">"bearer:env:PARTNER_X_TOKEN"</span>,
+  <span class="s">"request_template"</span>: { ... },
+  <span class="s">"status_path"</span>: <span class="s">"$.consult.status"</span>,
+  <span class="s">"events_we_accept"</span>:
+    [<span class="s">"attended"</span>,<span class="s">"rx_started"</span>,<span class="s">"refill"</span>,<span class="s">"dropped"</span>],
+  <span class="s">"webhook_secret"</span>: <span class="s">"env:PARTNER_X_HMAC"</span>
+}</pre>
+    <p class="muted">V1 supports push booking, pull availability (mirrored every 10 min), and HMAC-signed postbacks. Onboarding doc + Postman collection per partner in <code>/docs/partners/</code>.</p>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 11 · Compliance</div>
+    <h2>Health-vertical guardrails (white-hat)</h2>
+    <ul class="checklist">
+      <li>BAAs signed: Twilio, Postmark/SES, Vercel (where applicable), Supabase, partner clinics.</li>
+      <li>pgsodium column encryption for PHI; RLS default-deny.</li>
+      <li>R2 with envelope-encrypted, signed-URL access (5-min default).</li>
+      <li>Append-only PHI access log; no PHI in any application or platform logs.</li>
+      <li>No "guaranteed weight loss"; no outcome promises; counsel-reviewed copy.</li>
+      <li>No before/after body imagery; no body-shaming hooks.</li>
+      <li>Visible "Educational only · Not medical advice" disclaimers everywhere.</li>
+      <li>DSAR + right-to-erase &lt; 30 days.</li>
+      <li>Per-vertical brand domain; warmed ad accounts; pixel separation.</li>
+      <li>Pen test before launch + annually.</li>
+    </ul>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 12 · Team &amp; cost</div>
+    <h2>People + monthly recurring (steady state)</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>People (V1, blended offshore)</h4>
+        <table>
+          <tbody>
+            <tr><td>Tech lead (telehealth exp.)</td><td>1.0 FTE</td></tr>
+            <tr><td>Senior full-stack</td><td>1.0</td></tr>
+            <tr><td>FE / CRO</td><td>0.5</td></tr>
+            <tr><td>Compliance / counsel (health)</td><td>0.4</td></tr>
+            <tr><td>Media buyer</td><td>1.0</td></tr>
+            <tr><td>Concierge (optional)</td><td>0.5-1.0</td></tr>
+            <tr><td>Data analyst</td><td>0.5</td></tr>
+            <tr><td>Provider integrations</td><td>0.5</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD 24-34k / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h4>Recurring infra / SaaS</h4>
+        <table>
+          <tbody>
+            <tr><td>Vercel + Cloudflare</td><td>50-200</td></tr>
+            <tr><td>Supabase Pro</td><td>25-100</td></tr>
+            <tr><td>Twilio (reminders dominate)</td><td>200-1,200</td></tr>
+            <tr><td>n8n + Cal.com (Railway)</td><td>40-100</td></tr>
+            <tr><td>HubSpot (concierge)</td><td>0-30</td></tr>
+            <tr><td>Sentry / BetterStack</td><td>50-200</td></tr>
+            <tr><td>GTM Server (Cloud Run)</td><td>30-80</td></tr>
+            <tr><td>BigQuery</td><td>30-100</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD ~500 - 2,000 / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 13 · Timeline</div>
+    <h2>8 weeks to soft launch</h2>
+    <div>
+      <div class="gantt-row"><div>W1 Setup + reuse</div><div class="gantt-bar"><span style="left:0%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W2 Eligibility screener</div><div class="gantt-bar"><span style="left:12.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W3 Provider + slot mirror</div><div class="gantt-bar"><span style="left:25%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W4 Booking + reminder pipeline</div><div class="gantt-bar"><span style="left:37.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W5 Twilio reminders + opt-out</div><div class="gantt-bar"><span style="left:50%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W6 Postbacks + server-side conv.</div><div class="gantt-bar"><span style="left:62.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W7 Counsel + pen test + e2e</div><div class="gantt-bar"><span style="left:75%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W8 Soft launch (2 US states, 1 partner)</div><div class="gantt-bar"><span style="left:87.5%; width:12.5%"></span></div></div>
+    </div>
+    <p class="muted">Phase 2: add 2nd partner + states; lift show-up rate; layer rev-share continuity.</p>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 14 · KPIs &amp; risks</div>
+    <h2>What we watch + top risks</h2>
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Quiz completion</div><div class="value">≥ 30%</div></div>
+      <div class="kpi"><div class="label">Eligible-to-booked</div><div class="value">≥ 40%</div></div>
+      <div class="kpi"><div class="label">Show-up rate</div><div class="value">≥ 55-65%</div></div>
+      <div class="kpi"><div class="label">CPA (attended)</div><div class="value">USD 80-180</div></div>
+      <div class="kpi"><div class="label">Day-60 LTV / CAC</div><div class="value">≥ 2.0x</div></div>
+      <div class="kpi"><div class="label">Postback P95 latency</div><div class="value">&lt; 30 min</div></div>
+    </div>
+    <h3 style="margin-top: 16px;">Top risks</h3>
+    <ul>
+      <li><strong>Health ad disapprovals</strong> → counsel-reviewed copy + backup creatives.</li>
+      <li><strong>FTC scrutiny on weight-loss claims</strong> → no specific outcomes, documented substantiation.</li>
+      <li><strong>Show-up rate drop</strong> → reminder engine + reschedule UX + concierge fallback.</li>
+      <li><strong>Partner payout shaving</strong> → server-side postbacks + manual reconciliation.</li>
+      <li><strong>PHI breach</strong> → BAA, encryption, RLS, signed URLs, pen test.</li>
+    </ul>
+    <p class="muted" style="margin-top: 14px;">Full engineering spec lives in <code>plans/glp1-tech-spec.md</code> in the repo.</p>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 15 · Next steps</div>
+    <h2>Decisions to unblock kickoff</h2>
+    <ol>
+      <li>Sign 1-2 telehealth partners with reliable postback APIs.</li>
+      <li>Hybrid CPA + monthly rev-share vs CPA-only for V1.</li>
+      <li>Voice reminder layer in V1 or V2.</li>
+      <li>Concierge in-house vs partner-handled rescheduling.</li>
+      <li>Brand name + domain + design system.</li>
+      <li>Initial 2 US states based on partner coverage.</li>
+    </ol>
+  </section>
+
+</main>
+
+<div class="controls">
+  <button class="btn" id="prevBtn">←</button>
+  <div class="counter" id="counter">1 / 15</div>
+  <button class="btn btn-primary" id="nextBtn">Next →</button>
+</div>
+
+<script src="./assets/deck.js"></script>
+</body>
+</html>
