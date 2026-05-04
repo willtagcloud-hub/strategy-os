@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Real Estate — Tech Deep Dive</title>
+<link rel="stylesheet" href="./assets/styles.css" />
+<style>
+  pre.codeblock {
+    background: #0b1226;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #c8d3ee;
+    font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    overflow: auto;
+    margin: 10px 0 4px;
+  }
+  pre.codeblock .c { color: #6f7aa1; }
+  pre.codeblock .k { color: #fb7185; }
+  pre.codeblock .s { color: #a7f3d0; }
+  pre.codeblock .n { color: #f43f5e; }
+  .gantt-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; margin: 4px 0; font-size: 13px; }
+  .gantt-bar { background: #1a2348; border-radius: 4px; height: 16px; position: relative; overflow: hidden; }
+  .gantt-bar > span { position: absolute; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 4px; }
+</style>
+</head>
+<body class="theme-realestate">
+
+<div class="progress" id="progress"></div>
+<div class="topbar">
+  <div class="brand">Strategy OS · <b>Real Estate Tech Deep Dive</b></div>
+  <div style="display:flex; gap:8px; pointer-events:auto;">
+    <a class="home-link" href="./realestate.html" title="Strategy view">← Strategy deck</a>
+    <a class="home-link" href="./index.html">All decks ↑</a>
+  </div>
+</div>
+
+<main class="deck">
+
+  <!-- 1 -->
+  <section class="slide title-slide">
+    <div class="eyebrow">Real Estate · Tech blueprint</div>
+    <h1>Buyer Readiness — Engineering Plan</h1>
+    <p class="tagline">Local-intent buyer PWA with dual monetization (agent + mortgage), Meta Special Ad Category-compliant funnels, NMLS-verified partner waterfall, and a multi-month buyer journey tracker.</p>
+    <div class="row" style="margin-top: 20px;">
+      <span class="tag">SAC + Fair Housing</span>
+      <span class="tag">Dual payout (agent + mortgage)</span>
+      <span class="tag">NMLS verified</span>
+      <span class="tag">Local geo + ZIP</span>
+    </div>
+    <p class="subnote">Companion to the strategy deck. Use ← / → to navigate.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 02 · Architecture</div>
+    <h2>System architecture</h2>
+    <pre class="codeblock"><span class="c">[Paid: Google Search · Meta (SAC) · Bing]</span>
+        ↓
+[<span class="k">Cloudflare</span> WAF + Bot Management]
+        ↓
+[<span class="k">Next.js</span> PWA on <span class="k">Vercel</span> (US/EU edge)]
+   ├─ /city/{slug}     (programmatic local SEO, ISR)
+   ├─ /readiness       (budget + area + timeline quiz)
+   ├─ /offers          (agent + mortgage matches)
+   └─ /me              (buyer journey tracker)
+        ↓
+[Edge / API on Vercel + <span class="k">Cloudflare Workers</span>]
+   ├─ /api/affordability      (uses daily rate snapshot)
+   ├─ /api/match/agent        (state + metro + capacity)
+   ├─ /api/match/mortgage     (NMLS partner match)
+   ├─ /api/click              (HMAC token + signed redirect)
+   └─ /api/webhooks/partner   (CPL/CPA/binding postbacks)
+        ↓
+[<span class="k">Postgres</span> + <span class="k">Redis</span> + <span class="k">R2</span> audit + <span class="k">ClickHouse</span> cohort log]
+        ↓
+   ├─ <span class="k">n8n</span>        → drips, dispositions, capacity caps
+   ├─ <span class="k">HubSpot</span>    → concierge for high-value leads
+   ├─ <span class="k">Twilio</span>     → OTP + transactional + concierge calls
+   ├─ <span class="k">Klaviyo</span> + <span class="k">Postscript</span> → buyer-journey drips
+   └─ <span class="k">Smarty</span> + mortgage rate feed
+        ↓
+[Server-side: GA4 + GTM Server, Meta CAPI (SAC-compliant),
+ Google Enhanced Conv. for Leads, BigQuery + Metabase]</pre>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 03 · Tech stack</div>
+    <h2>Stack at a glance</h2>
+    <table>
+      <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Framework</td><td>Next.js 14 (App Router)</td><td>PWA + ISR for programmatic city pages</td></tr>
+        <tr><td>Edge logic</td><td>Cloudflare Workers</td><td>Click attribution + signed redirect at the edge</td></tr>
+        <tr><td>DB / RLS</td><td>Supabase Postgres</td><td>Reuse pattern</td></tr>
+        <tr><td>Cohort analytics</td><td>ClickHouse Cloud</td><td>Buyer journey + creative scoring</td></tr>
+        <tr><td>Cache / queue</td><td>Upstash Redis + QStash</td><td>Capacity caps, retries</td></tr>
+        <tr><td>CRM</td><td>HubSpot Sales Hub Starter</td><td>Concierge for high-value leads</td></tr>
+        <tr><td>Telephony</td><td>Twilio</td><td>OTP + concierge calls</td></tr>
+        <tr><td>Email / SMS</td><td>Klaviyo + Postscript</td><td>Buyer-journey drips</td></tr>
+        <tr><td>Workflow</td><td>n8n self-hosted</td><td>Routing + capacity logic</td></tr>
+        <tr><td>Mortgage rate feed</td><td>Mortgage News Daily / partner API</td><td>Daily snapshot</td></tr>
+        <tr><td>Geo / address</td><td>Smarty</td><td>Address validation + ZIP radius</td></tr>
+        <tr><td>Analytics</td><td>GA4 + GTM Server + BigQuery</td><td>Server-side first</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 04 · PWA</div>
+    <h2>PWA implementation</h2>
+    <ul>
+      <li><strong>Manifest:</strong> <code>categories: ["productivity","finance","lifestyle"]</code>. Installable; install retains buyers across the multi-month decision window.</li>
+      <li><strong>Service worker:</strong> pre-cache app shell + fonts; never cache <code>/api/match/*</code>, <code>/api/affordability</code>, or <code>/api/click</code>.</li>
+      <li><strong>Background Sync</strong> for partial-quiz submissions + saved searches.</li>
+      <li><strong>Push topics:</strong> <code>saved_search_alert</code>, <code>rate_change</code>, <code>agent_followup</code>, <code>bundle_offer</code>. Quiet hours per timezone.</li>
+      <li>Strict CSP nonces; encrypted IndexedDB for partial quizzes + saved searches.</li>
+    </ul>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 05 · Buyer-readiness quiz</div>
+    <h2>Quiz flow (≤ 90s)</h2>
+    <ol>
+      <li>Stage (just looking · 12+ mo · 3-12 mo · ready now)</li>
+      <li>City / metro (Smarty autocomplete)</li>
+      <li>Bedrooms + property type</li>
+      <li>Approximate household income</li>
+      <li>Approximate down payment</li>
+      <li>First-time buyer (gates first-time programs)</li>
+      <li>Pre-approval status (none · soft · full)</li>
+      <li>Timeline + commute (optional)</li>
+      <li>Email · name · phone</li>
+      <li><strong>Fair Housing-compliant consent</strong> (no protected-class questions)</li>
+    </ol>
+    <p class="muted">Output: affordability snapshot (uses daily rate feed) → 3-5 agent shortlist + 3-5 mortgage shortlist → buyer-journey tracker with saved-search + price-band alerts.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 06 · Data model</div>
+    <h2>Buyers · agents · mortgage partners</h2>
+    <pre class="codeblock"><span class="k">buyer_intake</span>(id, user_id, stage, metro, city, state, zip,
+             bedrooms, property_type, hh_income_cents,
+             down_payment_cents, first_time_buyer,
+             pre_approval_status, timeline, commute_minutes,
+             collected_at)
+
+<span class="k">agents</span>(id, brokerage_id, name, license_state, license_number,
+       metros <span class="k">text[]</span>, languages <span class="k">text[]</span>, bio, photo_url,
+       rating, capacity_per_day, active)
+
+<span class="k">mortgage_partners</span>(id, name, nmls_id, states <span class="k">text[]</span>,
+                  api <span class="k">jsonb</span>, payout_terms <span class="k">jsonb</span>, active)
+
+<span class="k">matches</span>(id, user_id, intake_id,
+        agent_ids <span class="k">uuid[]</span>, mortgage_partner_ids <span class="k">uuid[]</span>,
+        generated_at)
+
+<span class="k">clicks</span>(id, user_id, partner_type, partner_id,
+       click_token, ip, user_agent, utm <span class="k">jsonb</span>, clicked_at)
+
+<span class="k">partner_postbacks</span>(id, partner_type, partner_id, click_token,
+                  event,    <span class="c">-- accepted | pre_qualified | funded | closed | rejected</span>
+                  amount_cents, raw, received_at)
+
+<span class="k">buyer_journey</span>(id, user_id, saved_searches <span class="k">jsonb</span>,
+              price_band_alert <span class="k">jsonb</span>, rate_alert <span class="k">jsonb</span>,
+              next_milestone, last_active)
+
+<span class="k">mortgage_rates</span>(id, product, apr, recorded_on, source)
+
+<span class="k">agent_capacity_log</span>(id, agent_id, assignment_date, count)</pre>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 07 · Capacity waterfall</div>
+    <h2>Match logic + waterfall</h2>
+    <pre class="codeblock"><span class="c">// POST /api/match/agent</span>
+candidates = agents.filter(a => a.metros.has(metro) && a.active)
+candidates = candidates.filter(a =>
+  assignments(a, today) &lt; a.capacity_per_day)
+ranked = candidates.sort(by rating desc, random tie-break)
+return top 3-5
+
+<span class="c">// If empty: fall back concentric ZIPs</span>
+if (ranked.length === 0) {
+  candidates = agents in adjacent ZIPs
+}
+
+<span class="c">// If still empty: queue + ops alert</span>
+if (ranked.length === 0) {
+  mark lead "queued"
+  Slack alert ops; do NOT silently drop
+}
+
+<span class="c">// Mortgage waterfall mirrors this, gated by NMLS state</span></pre>
+    <ul>
+      <li>Goal: keep per-partner accept rate ≥ 80%.</li>
+      <li>Capacity caps prevent overwhelming partners; rolling daily counts in <code>agent_capacity_log</code>.</li>
+      <li>NMLS validation is a <strong>hard precondition</strong> for mortgage matches.</li>
+    </ul>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 08 · API surface</div>
+    <h2>V1 endpoints</h2>
+    <table>
+      <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>POST</td><td><code>/api/quiz/answer</code></td><td>Step persistence + scoring</td></tr>
+        <tr><td>POST</td><td><code>/api/affordability</code></td><td>Budget calc with daily rate snapshot</td></tr>
+        <tr><td>POST</td><td><code>/api/match/agent</code></td><td>State + metro + capacity</td></tr>
+        <tr><td>POST</td><td><code>/api/match/mortgage</code></td><td>NMLS partner match</td></tr>
+        <tr><td>POST</td><td><code>/api/click</code></td><td>HMAC token + signed redirect</td></tr>
+        <tr><td>POST</td><td><code>/api/webhooks/partner/:type/:slug</code></td><td>CPL/CPA/closing events</td></tr>
+        <tr><td>POST</td><td><code>/api/journey/saved-search</code></td><td>Persist saved search</td></tr>
+        <tr><td>POST</td><td><code>/api/optout</code></td><td>DNC + per-channel revocation</td></tr>
+        <tr><td>POST</td><td><code>/api/conversions</code></td><td>Server-side fanout</td></tr>
+        <tr><td>GET</td><td><code>/api/me/journey</code></td><td>Buyer journey state for tracker</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 09 · Tracking</div>
+    <h2>Server-side conversions (SAC-compliant)</h2>
+    <pre class="codeblock">view_city_page → quiz_started → quiz_completed (metro, stage)
+→ match_generated_agent → match_generated_mortgage
+→ click_to_agent → click_to_mortgage
+→ <span class="n">agent_accepted</span>          <span class="c">// primary CPL (agent)</span>
+→ <span class="n">mortgage_pre_qualified</span>  <span class="c">// primary CPL (mortgage)</span>
+→ <span class="n">mortgage_funded</span>         <span class="c">// high-value CPA</span>
+→ <span class="n">deal_closed</span>             <span class="c">// rev-share trigger</span>
+→ saved_search_alert_open → optout</pre>
+    <ul>
+      <li><strong>Meta SAC:</strong> hashed identifiers only; no protected attributes; SAC-compliant audiences and broad targeting.</li>
+      <li>Optimize on <code>quiz_completed</code> initially → switch to <code>agent_accepted</code> / <code>mortgage_pre_qualified</code> at sufficient volume.</li>
+      <li>Google Ads: Enhanced Conversions for Leads with <code>mortgage_funded</code> value-based bidding.</li>
+      <li>Daily reconciliation vs partner reports; &gt; 5% variance → Slack alert.</li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 10 · Buyer journey</div>
+    <h2>The retention layer</h2>
+    <ul>
+      <li><strong>Saved search alerts</strong> → new listings or price drops trigger Klaviyo email + push.</li>
+      <li><strong>Rate alerts</strong> → 30-yr fixed moves &gt; 0.25% from saved snapshot → push notification.</li>
+      <li><strong>Drip series</strong> → day 0 / 3 / 7 / 14 / 30 / 60 / 90 educational content (closing-cost myths, inspection checklist, neighborhood guides).</li>
+      <li><strong>Concierge ping</strong> → if user marked "ready now" but hasn't clicked an agent by day 30, HubSpot task assigned to concierge.</li>
+      <li><strong>Cancel-intent flow</strong> → opt-out path offers "pause for 30 days" instead of full unsubscribe.</li>
+      <li><strong>Programmatic city SEO</strong> compounds organic returns alongside paid (Phase 2+).</li>
+    </ul>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 11 · Compliance</div>
+    <h2>SAC + Fair Housing + NMLS guardrails</h2>
+    <ul class="checklist">
+      <li>Meta Special Ad Category (US Housing): compliant audiences, no age/gender/ZIP-radius targeting, no certain lookalikes.</li>
+      <li>Fair Housing Act: no discriminatory copy or targeting; counsel-reviewed creative bank.</li>
+      <li>State licensing of agents: verify at onboarding + monthly recheck (state DOI APIs where available).</li>
+      <li>NMLS: verify mortgage partner NMLS at onboarding + monthly recheck.</li>
+      <li>TCPA: express consent for SMS/calls; daily DNC scrub vs National + internal + partner feeds.</li>
+      <li>CCPA / GDPR: DSAR + opt-out endpoints; right-to-erase ≤ 30 days.</li>
+      <li>PII columns encrypted with pgsodium; 90-day default retention for unconverted leads.</li>
+      <li>Two-party consent disclosure on concierge calls (CA, FL, etc.).</li>
+      <li>Rate snapshots dated; APR transparency on every CTA.</li>
+      <li>Per-vertical brand domain; warmed accounts; pixel separation.</li>
+    </ul>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 12 · DevOps &amp; SLOs</div>
+    <h2>Operational posture</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>SLOs</h4>
+        <ul>
+          <li><code>/api/match/agent</code> P95 ≤ 800 ms</li>
+          <li>Daily rate ingest by 9:00 ET; alert on staleness &gt; 3 h</li>
+          <li>Per-partner accept rate &lt; 50% for 1 h → Slack page</li>
+          <li>Saved search alert delivery ≥ 99%</li>
+          <li>Reconciliation variance &gt; 5% → Slack page</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Observability + flags</h4>
+        <ul>
+          <li>Sentry FE/BE + Vercel Analytics RUM</li>
+          <li>Better Stack uptime on /api/match/*, /api/click, /api/webhooks/*</li>
+          <li>Logflare → BigQuery warehouse</li>
+          <li>Flagsmith for capacity rules, drip variants, city templates</li>
+          <li>GitHub Actions: lint → types → unit → e2e → Lighthouse PWA ≥ 90</li>
+        </ul>
+      </div>
+    </div>
+    <p class="muted">Runbooks: agent capacity exhaustion, rate feed lag, postback gap, SAC audit.</p>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 13 · Team &amp; cost</div>
+    <h2>People + monthly recurring</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>People (V1, blended offshore)</h4>
+        <table>
+          <tbody>
+            <tr><td>Product / tech lead (real estate)</td><td>1.0 FTE</td></tr>
+            <tr><td>Senior full-stack</td><td>1.0</td></tr>
+            <tr><td>FE / CRO</td><td>0.5</td></tr>
+            <tr><td>Compliance / counsel</td><td>0.3 - 0.5</td></tr>
+            <tr><td>Media buyer (Search-first)</td><td>1.0</td></tr>
+            <tr><td>Concierge</td><td>0.5 - 1.0</td></tr>
+            <tr><td>Data analyst</td><td>0.5</td></tr>
+            <tr><td>Partner ops manager</td><td>0.5</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD 20-30k / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h4>Recurring infra / SaaS</h4>
+        <table>
+          <tbody>
+            <tr><td>Vercel + Cloudflare</td><td>70-250</td></tr>
+            <tr><td>Supabase Pro</td><td>25-100</td></tr>
+            <tr><td>ClickHouse Cloud (small)</td><td>50-150</td></tr>
+            <tr><td>Smarty (address)</td><td>50-250</td></tr>
+            <tr><td>Mortgage rate feed</td><td>50-300</td></tr>
+            <tr><td>Klaviyo + Postscript</td><td>150-1,200</td></tr>
+            <tr><td>Twilio (OTP + concierge)</td><td>50-300</td></tr>
+            <tr><td>HubSpot Sales Starter</td><td>15 / seat</td></tr>
+            <tr><td>Sentry / BetterStack</td><td>50-200</td></tr>
+            <tr><td>GTM Server (Cloud Run)</td><td>30-80</td></tr>
+            <tr><td>BigQuery</td><td>30-100</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD ~600 - 3,000 / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 14 · Timeline</div>
+    <h2>6 weeks to soft launch</h2>
+    <div>
+      <div class="gantt-row"><div>W1 IaC + reuse engines + Smarty integration</div><div class="gantt-bar"><span style="left:0%; width:16.66%"></span></div></div>
+      <div class="gantt-row"><div>W2 City pages + buyer intake + affordability + rate feed</div><div class="gantt-bar"><span style="left:16.66%; width:16.66%"></span></div></div>
+      <div class="gantt-row"><div>W3 Agent + mortgage match flows + capacity + waterfall</div><div class="gantt-bar"><span style="left:33.32%; width:16.66%"></span></div></div>
+      <div class="gantt-row"><div>W4 Click Worker + 2 NMLS mortgage partners onboarded</div><div class="gantt-bar"><span style="left:49.98%; width:16.66%"></span></div></div>
+      <div class="gantt-row"><div>W5 Klaviyo + Postscript drips + saved-search alerts + push</div><div class="gantt-bar"><span style="left:66.64%; width:16.66%"></span></div></div>
+      <div class="gantt-row"><div>W6 Counsel sign-off (Fair Housing + NMLS), pen test, soft launch (3 metros)</div><div class="gantt-bar"><span style="left:83.3%; width:16.7%"></span></div></div>
+    </div>
+    <p class="muted">Phase 2: 5 metros, 30+ agents, 3-4 mortgage partners, ≥ 1.3x Day-30 ROAS. Phase 3: 10+ metros, layer home insurance + moving services. Phase 4: ML agent ranking + automated onboarding.</p>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 15 · KPIs &amp; risks</div>
+    <h2>What we watch + top risks</h2>
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Wizard completion</div><div class="value">≥ 35%</div></div>
+      <div class="kpi"><div class="label">Agent connect</div><div class="value">≥ 30%</div></div>
+      <div class="kpi"><div class="label">Mortgage attach</div><div class="value">≥ 35%</div></div>
+      <div class="kpi"><div class="label">Combined CPA</div><div class="value">USD 60-140</div></div>
+      <div class="kpi"><div class="label">Day-30 ROAS</div><div class="value">≥ 1.3x</div></div>
+      <div class="kpi"><div class="label">Acceptance rate</div><div class="value">≥ 80%</div></div>
+    </div>
+    <h3 style="margin-top: 16px;">Top risks</h3>
+    <ul>
+      <li><strong>Meta SAC enforcement</strong> → plan creatives + audiences for compliance from day one.</li>
+      <li><strong>Fair Housing Act lapse</strong> → counsel-reviewed creative bank + targeting audit.</li>
+      <li><strong>NMLS / state licensing dispute</strong> → verify partners pre-launch + quarterly recheck.</li>
+      <li><strong>Mortgage rate volatility</strong> → mix buyer + mortgage payouts to balance market cycles.</li>
+      <li><strong>Local agent capacity exhausted</strong> → multi-agent waterfall + concentric ZIP fallback.</li>
+      <li><strong>Lead-quality disputes</strong> → tighter quiz scoring + speed-to-contact SLA.</li>
+    </ul>
+    <p class="muted" style="margin-top: 14px;">Full engineering spec lives in <code>plans/realestate-tech-spec.md</code> in the repo.</p>
+  </section>
+
+  <!-- 16 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 16 · Next steps</div>
+    <h2>Decisions to unblock kickoff</h2>
+    <ol>
+      <li>Initial 3 US metros (likely tier-1 with strong buyer + mortgage demand).</li>
+      <li>Direct agent contracts vs broker-network partner (HomeLight / OpCity-style aggregator).</li>
+      <li>Mortgage partner shortlist: 2-3 NMLS partners with bind feedback APIs.</li>
+      <li>Build vs license daily mortgage rate feed.</li>
+      <li>Concierge in-house vs outsourced for day-30 nudges.</li>
+      <li>Launch programmatic city SEO content with paid (compounds long-term) or after Phase 2.</li>
+    </ol>
+  </section>
+
+</main>
+
+<div class="controls">
+  <button class="btn" id="prevBtn">←</button>
+  <div class="counter" id="counter">1 / 16</div>
+  <button class="btn btn-primary" id="nextBtn">Next →</button>
+</div>
+
+<script src="./assets/deck.js"></script>
+</body>
+</html>

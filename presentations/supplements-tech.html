@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Supplements — Tech Deep Dive</title>
+<link rel="stylesheet" href="./assets/styles.css" />
+<style>
+  pre.codeblock {
+    background: #0b1226;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #c8d3ee;
+    font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    overflow: auto;
+    margin: 10px 0 4px;
+  }
+  pre.codeblock .c { color: #6f7aa1; }
+  pre.codeblock .k { color: #fb7185; }
+  pre.codeblock .s { color: #a7f3d0; }
+  pre.codeblock .n { color: #f43f5e; }
+  .gantt-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; margin: 4px 0; font-size: 13px; }
+  .gantt-bar { background: #1a2348; border-radius: 4px; height: 16px; position: relative; overflow: hidden; }
+  .gantt-bar > span { position: absolute; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 4px; }
+</style>
+</head>
+<body class="theme-supplements">
+
+<div class="progress" id="progress"></div>
+<div class="topbar">
+  <div class="brand">Strategy OS · <b>Supplements Tech Deep Dive</b></div>
+  <div style="display:flex; gap:8px; pointer-events:auto;">
+    <a class="home-link" href="./supplements.html" title="Strategy view">← Strategy deck</a>
+    <a class="home-link" href="./index.html">All decks ↑</a>
+  </div>
+</div>
+
+<main class="deck">
+
+  <!-- 1 -->
+  <section class="slide title-slide">
+    <div class="eyebrow">Supplements · Tech blueprint</div>
+    <h1>Supplement Decision — Engineering Plan</h1>
+    <p class="tagline">Goal-based decision PWA with partner-brand checkout, retention spine that drives Day-60 LTV, and a creator pipeline that ships 5-10 fresh UGC variants per week.</p>
+    <div class="row" style="margin-top: 20px;">
+      <span class="tag">Next.js + Workers</span>
+      <span class="tag">Klaviyo + Postscript</span>
+      <span class="tag">Creator pipeline</span>
+      <span class="tag">FTC-aware</span>
+    </div>
+    <p class="subnote">Companion to the strategy deck. Use ← / → to navigate.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 02 · Architecture</div>
+    <h2>System architecture</h2>
+    <pre class="codeblock"><span class="c">[Paid: Meta · TikTok · Native · Google Search]</span>
+        ↓
+[<span class="k">Cloudflare</span> WAF + Bot Management]
+        ↓
+[<span class="k">Next.js</span> PWA on <span class="k">Vercel</span> (US/EU edge)]
+   ├─ /advertorial-{angle}
+   ├─ /quiz
+   ├─ /recommendation
+   └─ /handoff → partner-brand checkout
+        ↓
+[Edge / API on Vercel + <span class="k">Cloudflare Workers</span>]
+   ├─ /api/quiz/*           (steps + scoring)
+   ├─ /api/recommend        (stack matcher)
+   ├─ /api/click            (HMAC token + signed redirect)
+   └─ /api/webhooks/partner (CPA + subscription postbacks)
+        ↓
+[<span class="k">Postgres</span> + <span class="k">Redis</span> + <span class="k">R2</span> audit]
+        ↓
+   ├─ <span class="k">Klaviyo</span>     → email retention spine
+   ├─ <span class="k">Postscript</span>  → SMS retention + winback
+   ├─ <span class="k">n8n</span>         → drips, dispositions, creator workflow
+   ├─ <span class="k">Twilio</span>      → OTP / transactional only
+   ├─ Partner-brand APIs (CPA + recurring postbacks)
+   └─ Notion + Frame.io     → creator pipeline
+        ↓
+[Server-side: GA4 + GTM Server, Meta CAPI,
+ TikTok Events API, BigQuery + Metabase]</pre>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 03 · Tech stack</div>
+    <h2>Stack at a glance</h2>
+    <table>
+      <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Framework</td><td>Next.js 14 (App Router)</td><td>PWA + ISR for advertorials; reuses platform</td></tr>
+        <tr><td>Edge logic</td><td>Cloudflare Workers</td><td>Click attribution + signed redirect at the edge</td></tr>
+        <tr><td>DB / RLS</td><td>Supabase Postgres</td><td>Reuse pattern</td></tr>
+        <tr><td>Cache / queue</td><td>Upstash Redis + QStash</td><td>Retention timers, retries</td></tr>
+        <tr><td>Email</td><td>Klaviyo</td><td>Best-in-class flows for ecom</td></tr>
+        <tr><td>SMS</td><td>Postscript (US) + Klaviyo SMS (intl)</td><td>Subscription-aware sequences</td></tr>
+        <tr><td>Transactional</td><td>Twilio (OTP + transactional only)</td><td>Owns phone verification</td></tr>
+        <tr><td>Workflow</td><td>n8n self-hosted (Railway)</td><td>Creator + ops automations</td></tr>
+        <tr><td>Creator pipeline</td><td>Notion + Frame.io + n8n</td><td>Brief → review → publish</td></tr>
+        <tr><td>Analytics</td><td>GA4 + GTM Server + BigQuery</td><td>Server-side first</td></tr>
+        <tr><td>Stripe (V2 only)</td><td>Stripe Subs + ReCharge</td><td>If we go direct-sell</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 04 · PWA</div>
+    <h2>PWA implementation</h2>
+    <ul>
+      <li><strong>Manifest:</strong> <code>categories: ["lifestyle","health","productivity"]</code>. Installable; install drives <em>adherence reminders + reorder prompts</em>.</li>
+      <li><strong>Service worker:</strong> pre-cache app shell + fonts; never cache <code>/api/recommend</code> or <code>/api/click</code>.</li>
+      <li><strong>Background Sync</strong> for partial-quiz submissions on flaky networks.</li>
+      <li><strong>Push topics:</strong> <code>adherence_morning</code>, <code>reorder_due</code>, <code>bundle_offer</code>, <code>winback</code>. Quiet hours per timezone.</li>
+      <li>Strict CSP nonces on advertorial pages; encrypted IndexedDB resume of partial quizzes.</li>
+    </ul>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 05 · Decision quiz</div>
+    <h2>Goal-based decision quiz (≤ 90s)</h2>
+    <ol>
+      <li>Primary goal (fat loss · appetite · energy · gut · sleep)</li>
+      <li>Secondary goals (≤ 3, multi-select)</li>
+      <li>Activity level + dietary pattern</li>
+      <li>Risk filter (pregnancy, conditions, medications)</li>
+      <li>Allergens (soy, dairy, gluten, shellfish, …)</li>
+      <li>Lifestyle context (commute, work hours, sleep)</li>
+      <li>Budget band</li>
+      <li>Email · name · phone (optional, lifts retention)</li>
+      <li>Marketing consent + age confirmation</li>
+    </ol>
+    <p class="muted">Output: 3-product stack + bundle + comparison view → partner-brand checkout with HMAC-attributed redirect. Rule-based engine in V1; small XGBoost model in V2.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 06 · Data model</div>
+    <h2>Catalog · clicks · postbacks</h2>
+    <pre class="codeblock"><span class="k">supplement_intake</span>(id, user_id, primary_goal,
+                  secondary_goals <span class="k">text[]</span>, diet_pattern,
+                  risk_flags <span class="k">text[]</span>, allergens <span class="k">text[]</span>,
+                  budget_band, collected_at)
+
+<span class="k">products</span>(id, partner_id, external_sku, name, category,
+         ingredients <span class="k">text[]</span>, daily_dose,
+         price_cents, subscription_price_cents,
+         url_template, active)
+
+<span class="k">partners</span>(id, slug, name, legal_name,
+         api <span class="k">jsonb</span>, payout_terms <span class="k">jsonb</span>, active)
+
+<span class="k">recommendations</span>(id, user_id, intake_id,
+                product_ids <span class="k">uuid[]</span>, bundle_price_cents,
+                rule_set_version, generated_at)
+
+<span class="k">clicks</span>(id, user_id, product_id, partner_id,
+       click_token, ip, user_agent, utm <span class="k">jsonb</span>, clicked_at)
+
+<span class="k">partner_postbacks</span>(id, partner_id, click_token,
+                  event,        <span class="c">-- order_paid | refund | sub_renewed | sub_cancelled</span>
+                  amount_cents, raw, received_at)</pre>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 07 · Click flow</div>
+    <h2>Edge attribution + signed redirect</h2>
+    <pre class="codeblock"><span class="c">// Cloudflare Worker: POST /api/click</span>
+validate(payload)
+click_token = HMAC(user_id || product_id || ts)
+persist click row (ip, ua, utm, click_token)
+url = render(product.url_template, {
+  click_token, sub_id: user_id, partner_id, ...
+})
+sendEvent(<span class="s">"click_to_partner"</span>, click_token)
+return 302 → url
+
+<span class="c">// Inbound: POST /api/webhooks/partner/:slug</span>
+verify HMAC signature
+match click_token → click row
+insert partner_postbacks(event, amount, raw)
+fan out:
+  - Klaviyo flow trigger (order_paid → onboarding · sub_cancelled → winback)
+  - Postscript trigger (reorder reminder · cancel-intent SMS)
+  - server-side fanout (Meta CAPI · TikTok Events · GA4)</pre>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 08 · API surface</div>
+    <h2>V1 endpoints</h2>
+    <table>
+      <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>POST</td><td><code>/api/quiz/answer</code></td><td>Step persistence + scoring</td></tr>
+        <tr><td>POST</td><td><code>/api/recommend</code></td><td>Build stack + bundle from intake</td></tr>
+        <tr><td>POST</td><td><code>/api/click</code></td><td>HMAC token + signed redirect (Worker)</td></tr>
+        <tr><td>POST</td><td><code>/api/webhooks/partner/:slug</code></td><td>CPA + subscription events</td></tr>
+        <tr><td>POST</td><td><code>/api/optout</code></td><td>Per-channel opt-out</td></tr>
+        <tr><td>POST</td><td><code>/api/conversions</code></td><td>Server-side fanout</td></tr>
+        <tr><td>GET</td><td><code>/api/me/recommendation</code></td><td>Re-display latest stack</td></tr>
+        <tr><td>POST</td><td><code>/api/push/subscribe</code></td><td>Save push subscription</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 09 · Tracking</div>
+    <h2>Server-side conversions + LTV</h2>
+    <pre class="codeblock">view_advertorial → quiz_started → quiz_completed
+→ recommendation_generated → click_to_partner
+→ <span class="n">order_paid</span>            <span class="c">// primary CPA event</span>
+→ refund
+→ <span class="n">subscription_renewed</span>  <span class="c">// LTV signal</span>
+→ <span class="n">subscription_cancelled</span>
+→ winback_redeemed → optout</pre>
+    <ul>
+      <li>Meta CAPI: optimize on <code>recommendation_generated</code> (volume) → switch to <code>order_paid</code> at sufficient scale.</li>
+      <li>TikTok Events API mirrors Meta for parity tests.</li>
+      <li>Google Enhanced Conversions for Leads on <code>order_paid</code> with value-based bidding.</li>
+      <li>BigQuery joins clicks × postbacks × users → 60-day LTV per ad cohort drives bid + budget.</li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 10 · Retention spine</div>
+    <h2>The LTV engine</h2>
+    <table>
+      <thead><tr><th>Day</th><th>Channel</th><th>Trigger / message</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>Email + push</td><td>Order confirmation + getting-started guide</td></tr>
+        <tr><td>1</td><td>Email + push</td><td>"Starting your stack" checklist</td></tr>
+        <tr><td>3</td><td>Email</td><td>Habit-formation tip</td></tr>
+        <tr><td>7</td><td>Email</td><td>"What to expect by week 4"</td></tr>
+        <tr><td>14</td><td>Email</td><td>Milestone + ask for review</td></tr>
+        <tr><td>21</td><td>Email + SMS</td><td>Reorder reminder ahead of rebill</td></tr>
+        <tr><td>28</td><td>Push</td><td>Adherence + cycle review</td></tr>
+        <tr><td>45</td><td>Email</td><td>Cross-sell complementary product</td></tr>
+        <tr><td>60</td><td>Email</td><td>Loyalty / annual offer</td></tr>
+        <tr><td>any</td><td>SMS</td><td>Cancel-intent → "pause for 30 days" path</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">All flows A/B-tested in Klaviyo; winners promoted weekly. Triggers driven by partner postbacks → webhook fanout.</p>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 11 · Creator pipeline</div>
+    <h2>UGC pipeline as a system</h2>
+    <pre class="codeblock"><span class="c">[Notion brief board]</span>
+   ├─ Brief: hook + product + duration + must-include
+   └─ Status: open | claimed | in-edit | needs-revision | approved
+        ↓
+[Creator submits raw to <span class="k">Frame.io</span>]
+        ↓
+[Editor cuts variants in CapCut/Premiere]
+        ↓
+[Internal review in Frame.io]
+        ↓
+[<span class="k">n8n</span> auto-publish:
+  - Upload to Meta Ads + TikTok Ads via API
+  - Tag in BigQuery as creative_id + creator_id
+  - Activate in test ad set with budget cap]
+        ↓
+[Auto-rotate after 7 days; replace bottom 30% weekly]</pre>
+    <ul>
+      <li><strong>5-10 new creatives per week</strong>, bottom 30% replaced weekly.</li>
+      <li>Creator pool of 8-15 active across angles (UGC reviewer, expert-style, lifestyle).</li>
+      <li>Material-connection disclosure enforced in every brief; creator scorecards in Metabase.</li>
+    </ul>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 12 · Compliance</div>
+    <h2>FTC-aware guardrails</h2>
+    <ul class="checklist">
+      <li>Substantiation behind every benefit claim; no specific outcomes.</li>
+      <li>Prominent affiliate disclosure on every page; full disclosure page linked.</li>
+      <li>FTC endorsement: material-connection disclosure baked into every creator brief.</li>
+      <li>No before/after body imagery; no body shaming; no specific weight-loss promises.</li>
+      <li>18+ age confirmation; under-18 blocked at intake.</li>
+      <li>GDPR / UK-GDPR / CCPA aligned; DSAR + opt-out endpoints.</li>
+      <li>PII columns encrypted with pgsodium; 90-day default retention for unconverted leads.</li>
+      <li>Geo gating where partner sells; no overselling out-of-region.</li>
+      <li>Per-vertical brand domain; warmed accounts; pixel separation.</li>
+      <li>Counsel review checkpoints: advertorial copy, every benefit claim, refund/cancel copy, every creator brief.</li>
+    </ul>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 13 · Team &amp; cost</div>
+    <h2>People + monthly recurring</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>People (V1, blended offshore)</h4>
+        <table>
+          <tbody>
+            <tr><td>Product / tech lead</td><td>0.5 - 1.0 FTE</td></tr>
+            <tr><td>Senior full-stack</td><td>1.0</td></tr>
+            <tr><td>FE / CRO</td><td>1.0</td></tr>
+            <tr><td>Compliance / counsel</td><td>0.2</td></tr>
+            <tr><td>Media buyer (Meta + TikTok)</td><td>1.0</td></tr>
+            <tr><td>Creator manager</td><td>0.5 - 1.0</td></tr>
+            <tr><td>Editor (UGC cuts)</td><td>0.5</td></tr>
+            <tr><td>Retention manager (Klaviyo)</td><td>0.5</td></tr>
+            <tr><td>Data analyst</td><td>0.5</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD 18-28k / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h4>Recurring infra / SaaS</h4>
+        <table>
+          <tbody>
+            <tr><td>Vercel + Cloudflare</td><td>50-200</td></tr>
+            <tr><td>Supabase Pro</td><td>25-100</td></tr>
+            <tr><td>Upstash Redis + QStash</td><td>10-50</td></tr>
+            <tr><td>Klaviyo (volume-tiered)</td><td>60-800</td></tr>
+            <tr><td>Postscript (volume-tiered)</td><td>100-800</td></tr>
+            <tr><td>Twilio (OTP only)</td><td>20-100</td></tr>
+            <tr><td>n8n (Railway)</td><td>20-50</td></tr>
+            <tr><td>Sentry / BetterStack / Logflare</td><td>50-200</td></tr>
+            <tr><td>GTM Server (Cloud Run)</td><td>30-80</td></tr>
+            <tr><td>BigQuery</td><td>30-100</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD ~400 - 2,500 / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="muted" style="margin-top: 6px;">Plus creator payouts: 8-15 creators × USD 100-300/post → <strong>USD 1.5-4.5k / mo</strong>.</p>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 14 · Timeline</div>
+    <h2>5-6 weeks to soft launch</h2>
+    <div>
+      <div class="gantt-row"><div>W1 IaC + reuse quiz engine + advertorial template</div><div class="gantt-bar"><span style="left:0%; width:16.66%"></span></div></div>
+      <div class="gantt-row"><div>W2 Intake + recommendation rule engine + catalog</div><div class="gantt-bar"><span style="left:16.66%; width:16.66%"></span></div></div>
+      <div class="gantt-row"><div>W3 Click Worker + first 2 partner integrations</div><div class="gantt-bar"><span style="left:33.32%; width:16.66%"></span></div></div>
+      <div class="gantt-row"><div>W4 Klaviyo + Postscript flows + push + creator pipeline</div><div class="gantt-bar"><span style="left:49.98%; width:16.66%"></span></div></div>
+      <div class="gantt-row"><div>W5 Server-side conversions + GA4 + GTM + Sentry + BetterStack</div><div class="gantt-bar"><span style="left:66.64%; width:16.66%"></span></div></div>
+      <div class="gantt-row"><div>W6 Counsel sign-off + e2e + soft launch (US + UK · 1 partner)</div><div class="gantt-bar"><span style="left:83.3%; width:16.7%"></span></div></div>
+    </div>
+    <p class="muted">Phase 2: add 2 more partners, retention experiments, creator scaling, BigQuery LTV. Phase 4 evaluates direct-sell (Stripe + ReCharge) once volume justifies fulfillment.</p>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 15 · KPIs &amp; risks</div>
+    <h2>What we watch + top risks</h2>
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Quiz completion</div><div class="value">≥ 40%</div></div>
+      <div class="kpi"><div class="label">Quiz → checkout click</div><div class="value">8-15%</div></div>
+      <div class="kpi"><div class="label">First-order CPA</div><div class="value">USD 22-50</div></div>
+      <div class="kpi"><div class="label">Day-1 ROAS</div><div class="value">≥ 1.0x</div></div>
+      <div class="kpi"><div class="label">Day-60 LTV / CAC</div><div class="value">≥ 1.8x</div></div>
+      <div class="kpi"><div class="label">Refund rate</div><div class="value">&lt; 8%</div></div>
+    </div>
+    <h3 style="margin-top: 16px;">Top risks</h3>
+    <ul>
+      <li><strong>FTC scrutiny</strong> on claims → counsel-reviewed copy + substantiation + no specific outcomes.</li>
+      <li><strong>Refund / chargeback spikes</strong> → clear pre-purchase, cancel-anytime, partner refund SLA.</li>
+      <li><strong>Creative fatigue</strong> → creator pipeline + bottom-30% rotation weekly.</li>
+      <li><strong>Subscription churn</strong> → retention spine + adherence push + cycle review.</li>
+      <li><strong>Partner payout shaving</strong> → server postbacks + monthly reconciliation.</li>
+      <li><strong>Allergen / interaction risk</strong> → risk filter at quiz + safety disclaimer on results.</li>
+    </ul>
+    <p class="muted" style="margin-top: 14px;">Full engineering spec lives in <code>plans/supplements-tech-spec.md</code> in the repo.</p>
+  </section>
+
+  <!-- 16 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 16 · Next steps</div>
+    <h2>Decisions to unblock kickoff</h2>
+    <ol>
+      <li>Initial 2 partners and commercial terms (CPA + rev-share + billable-after-N-days).</li>
+      <li>Klaviyo + Postscript vs Klaviyo SMS only.</li>
+      <li>Phone collection in V1 quiz (lifts SMS retention; lowers completion).</li>
+      <li>Direct-sell evaluation horizon (Phase 4 trigger volume).</li>
+      <li>Brand structure: parent + sub-brands by angle, or fully isolated brands.</li>
+      <li>Ship the small ML recommender in V1 or V2.</li>
+    </ol>
+  </section>
+
+</main>
+
+<div class="controls">
+  <button class="btn" id="prevBtn">←</button>
+  <div class="counter" id="counter">1 / 16</div>
+  <button class="btn btn-primary" id="nextBtn">Next →</button>
+</div>
+
+<script src="./assets/deck.js"></script>
+</body>
+</html>
