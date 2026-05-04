@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Visa — Tech Deep Dive</title>
+<link rel="stylesheet" href="./assets/styles.css" />
+<style>
+  pre.codeblock {
+    background: #0b1226;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #c8d3ee;
+    font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    overflow: auto;
+    margin: 10px 0 4px;
+  }
+  pre.codeblock .c { color: #6f7aa1; }
+  pre.codeblock .k { color: #93c5fd; }
+  pre.codeblock .s { color: #a7f3d0; }
+  pre.codeblock .n { color: #fbbf24; }
+  .arch-grid {
+    display: grid; grid-template-columns: 200px 1fr; gap: 8px 14px;
+    align-items: start; margin-top: 12px;
+  }
+  .arch-grid .lbl { color: #60a5fa; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; padding-top: 4px; }
+  .arch-grid .val { color: #e7ecf5; font-size: 14px; }
+  .gantt { margin-top: 8px; }
+  .gantt-row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; margin: 4px 0; font-size: 13px; }
+  .gantt-bar { background: #1a2348; border-radius: 4px; height: 16px; position: relative; overflow: hidden; }
+  .gantt-bar > span { position: absolute; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 4px; }
+</style>
+</head>
+<body class="theme-visa">
+
+<div class="progress" id="progress"></div>
+<div class="topbar">
+  <div class="brand">Strategy OS · <b>Visa Tech Deep Dive</b></div>
+  <div style="display:flex; gap:8px; pointer-events:auto;">
+    <a class="home-link" href="./visa.html" title="Strategy view">← Strategy deck</a>
+    <a class="home-link" href="./index.html">All decks ↑</a>
+  </div>
+</div>
+
+<main class="deck">
+
+  <!-- 1 -->
+  <section class="slide title-slide">
+    <div class="eyebrow">Visa · Tech blueprint</div>
+    <h1>Visa Document Navigator — Engineering Plan</h1>
+    <p class="tagline">Implementation-grade plan: PWA architecture, data model, integrations, tracking, callback ops, infra cost, team, and 8-week build timeline.</p>
+    <div class="row" style="margin-top: 20px;">
+      <span class="tag">Next.js · Supabase</span>
+      <span class="tag">Cloudflare · Vercel</span>
+      <span class="tag">Twilio · n8n · HubSpot</span>
+      <span class="tag">Server-side conversions</span>
+    </div>
+    <p class="subnote">Companion to the strategy deck. Use ← / → to navigate.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 02 · Architecture</div>
+    <h2>System architecture (high level)</h2>
+    <pre class="codeblock"><span class="c">[Paid Ad / Search]</span>
+        ↓
+[<span class="k">Cloudflare</span> WAF + Bot Management]
+        ↓
+[<span class="k">Next.js</span> PWA on <span class="k">Vercel</span> (IN/SG/EU edge)]
+   ├─ /quiz · /book · /pay
+   ├─ /api/lead · /api/score · /api/booking
+   └─ /api/conversions · /api/webhooks/*
+        ↓
+[<span class="k">Postgres</span> (Supabase) + <span class="k">Redis</span> (Upstash) + <span class="k">R2</span>]
+        ↓
+   ├─ <span class="k">n8n</span>     → routing, partner pings, drips
+   ├─ <span class="k">HubSpot</span> → CRM, dialer, pipelines
+   ├─ <span class="k">Twilio</span>  → SMS, WhatsApp, voice + recording
+   ├─ <span class="k">Cal.com</span> → callback / consult slots
+   ├─ <span class="k">Stripe</span> + <span class="k">Razorpay</span> → package payments
+   └─ Partner APIs → migration agencies
+        ↓
+[Server-side analytics: GA4 + GTM Server,
+ Meta CAPI, Google Enhanced Conv. for Leads]</pre>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 03 · Tech stack</div>
+    <h2>Stack at a glance</h2>
+    <table>
+      <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Framework</td><td>Next.js 14 (App Router)</td><td>PWA + SSR/ISR, edge runtime</td></tr>
+        <tr><td>Hosting</td><td>Vercel + Cloudflare</td><td>Edge POPs in IN/SG, WAF + bot mgmt</td></tr>
+        <tr><td>DB / Auth</td><td>Supabase (Postgres + RLS)</td><td>Managed, fast V1 velocity</td></tr>
+        <tr><td>Cache / queue</td><td>Upstash Redis + QStash</td><td>Serverless, retries</td></tr>
+        <tr><td>Workflow</td><td>n8n self-hosted on Railway</td><td>Visual routing, no Zapier tax</td></tr>
+        <tr><td>CRM / dialer</td><td>HubSpot Sales Starter</td><td>Pipelines + dialer + reporting</td></tr>
+        <tr><td>Telephony</td><td>Twilio (SMS/WA/voice)</td><td>Local DIDs in IN/PK</td></tr>
+        <tr><td>Booking</td><td>Cal.com (self-hosted)</td><td>Owns the data, embed-friendly</td></tr>
+        <tr><td>Payments</td><td>Stripe + Razorpay</td><td>Global cards + IN UPI/netbanking</td></tr>
+        <tr><td>Analytics</td><td>GA4 + GTM Server + Looker / Metabase</td><td>Server-side first</td></tr>
+        <tr><td>IaC / CI</td><td>Terraform + GitHub Actions</td><td>Reproducible from day 1</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 04 · PWA</div>
+    <h2>PWA implementation specifics</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>Manifest + install</h4>
+        <ul>
+          <li>Standalone, portrait, theme-locked.</li>
+          <li>Custom install prompt at quiz step 4.</li>
+          <li>iOS Safari fallback banner with manual instructions.</li>
+          <li>Track <code>appinstalled</code> as a server-side event.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Service worker (Workbox)</h4>
+        <ul>
+          <li>Pre-cache app shell + fonts.</li>
+          <li>Network-first for <code>/api/*</code>, 3 s timeout.</li>
+          <li>Background Sync for <code>/api/lead</code> on flaky 4G.</li>
+          <li>IndexedDB resume of quiz drafts.</li>
+          <li>Push topics: case-reminders, doc-missing, appt-soon.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 05 · Funnel engine</div>
+    <h2>Quiz engine (config-driven, reused across verticals)</h2>
+    <pre class="codeblock"><span class="k">type</span> QuizStep =
+  | { id; type:<span class="s">"single"</span>;  question; options:[{value,label,weight?}] }
+  | { id; type:<span class="s">"multi"</span>;   question; options:[{value,label,weight?}] }
+  | { id; type:<span class="s">"number"</span>;  question; min; max; weight?:(n)=&gt;number }
+  | { id; type:<span class="s">"date"</span>;    question }
+  | { id; type:<span class="s">"branch"</span>;  condition; ifTrue; ifFalse }
+
+<span class="k">type</span> QuizConfig = { id; locale; steps:QuizStep[]; scoring:Rule[]; cta }</pre>
+    <p class="muted">Scoring runs client-side for instant UX and re-runs server-side on <code>/api/score</code> for trust + persistence. Same engine drives Loans, Insurance, Real Estate.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 06 · Data model</div>
+    <h2>Core tables</h2>
+    <pre class="codeblock"><span class="k">users</span>(id, email, phone, locale, utm, consent_log…)
+<span class="k">quiz_runs</span>(id, user_id, quiz_id, answers, score, recommendation)
+<span class="k">documents</span>(id, user_id, type, status, storage_path)
+<span class="k">cases</span>(id, user_id, package_id, destination, status, milestones)
+<span class="k">packages</span>(id, slug, name, price_cents, currency)
+<span class="k">payments</span>(id, user_id, provider, provider_id, status, raw)
+<span class="k">bookings</span>(id, user_id, type, scheduled_at, agent_id, status)
+<span class="k">calls</span>(id, user_id, agent_id, duration_sec, recording_url, disposition)
+<span class="k">push_subscriptions</span>(id, user_id, endpoint, keys, topics)
+<span class="k">server_events</span>(id, user_id, event_name, destination, payload, status)</pre>
+    <p class="muted">PII columns encrypted with pgsodium. Default-deny RLS. PITR + nightly logical dump to R2.</p>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 07 · API surface</div>
+    <h2>V1 endpoints</h2>
+    <table>
+      <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>POST</td><td><code>/api/lead</code></td><td>Capture, fire <code>lead</code> event</td></tr>
+        <tr><td>POST</td><td><code>/api/score</code></td><td>Eligibility scoring + persistence</td></tr>
+        <tr><td>POST</td><td><code>/api/booking</code></td><td>Callback / consult slots</td></tr>
+        <tr><td>POST</td><td><code>/api/payments/intent</code></td><td>Stripe / Razorpay intent</td></tr>
+        <tr><td>POST</td><td><code>/api/webhooks/stripe</code></td><td>Mark paid, start case</td></tr>
+        <tr><td>POST</td><td><code>/api/webhooks/twilio/*</code></td><td>SMS / voice callbacks</td></tr>
+        <tr><td>POST</td><td><code>/api/conversions</code></td><td>Server-side fanout to ad platforms</td></tr>
+        <tr><td>POST</td><td><code>/api/partners/handoff</code></td><td>Push lead to migration partner</td></tr>
+        <tr><td>GET</td><td><code>/api/me/case</code></td><td>Case status (PWA tracker)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 08 · Tracking</div>
+    <h2>Server-side conversions</h2>
+    <p>One normalized event taxonomy fans out to every platform with hashed user data and a shared <code>event_id</code> for browser-pixel dedup.</p>
+    <pre class="codeblock">view_prelander → quiz_start → quiz_completed
+→ <span class="n">lead_submitted</span> → booking_scheduled → booking_attended
+→ <span class="n">package_purchased</span> → case_started → case_milestone_reached
+→ partner_handoff_sent → partner_handoff_qualified → partner_handoff_paid</pre>
+    <ul>
+      <li><strong>Meta CAPI</strong>: optimize on <code>lead_submitted</code> → switch to <code>package_purchased</code> at ≥50/wk.</li>
+      <li><strong>Google Ads Enhanced Conversions for Leads</strong>: gclid + hashed PII; value-based bidding.</li>
+      <li><strong>TikTok Events API</strong>: same payload schema.</li>
+      <li>Retries on QStash; dead letter in <code>server_events</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 09 · Callback ops</div>
+    <h2>Callback stack integration</h2>
+    <div class="arch-grid">
+      <div class="lbl">Telephony</div><div class="val">Twilio voice + WhatsApp + SMS, IN/PK local DIDs.</div>
+      <div class="lbl">CRM</div><div class="val">HubSpot pipelines: Lead → Contact Made → Qualified → Quoted → Won → Onboarded.</div>
+      <div class="lbl">Routing</div><div class="val">n8n: vertical → geo → language → working hours → lowest-load agent.</div>
+      <div class="lbl">Booking</div><div class="val">Cal.com embed at quiz end; ~25-35% self-book without an agent.</div>
+      <div class="lbl">SLAs</div><div class="val">Hot < 5 min, Warm < 1 h, Cold = drip only.</div>
+      <div class="lbl">Recording</div><div class="val">Twilio + R2, 30-day retention, consent recorded.</div>
+      <div class="lbl">Capacity</div><div class="val">Pilot: 2 callers EN+Hindi, ~80 hot leads/day each.</div>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 10 · Security &amp; compliance</div>
+    <h2>Controls</h2>
+    <ul class="checklist">
+      <li>TLS 1.3 only, HSTS preload, strict CSP nonces.</li>
+      <li>Default-deny RLS; service-role only for ingestion.</li>
+      <li>pgsodium column encryption for PII (passport, phone, etc.).</li>
+      <li>Signed-URL document storage (R2), 5-min default expiry.</li>
+      <li>Consent log captured at every PII collection point.</li>
+      <li>GDPR + India DPDP DSAR endpoints; right-to-erase ≤ 30 d.</li>
+      <li>Per-vertical brand domains; no cross-pollination of pixels.</li>
+      <li>Quarterly secret rotation; Dependabot + weekly <code>pnpm audit</code>.</li>
+      <li>Pen test before launch + annually thereafter.</li>
+    </ul>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 11 · DevOps</div>
+    <h2>Build, ship, observe</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>Pipeline</h4>
+        <ul>
+          <li>GitHub Actions: lint → types → unit → e2e (Playwright on staging) → deploy.</li>
+          <li>Required checks include Lighthouse PWA ≥ 90.</li>
+          <li>Preview env per PR (Vercel + Supabase branch).</li>
+          <li>Feature flags via Flagsmith self-hosted.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Observability</h4>
+        <ul>
+          <li>Sentry (FE + BE), Vercel Analytics RUM.</li>
+          <li>Better Stack uptime on 10 endpoints.</li>
+          <li>Logflare → BigQuery warehouse.</li>
+          <li>Slack-paged alerts: 5xx spike, conv. drop > 30% vs 7d avg, payment webhook failure.</li>
+          <li>Runbooks in <code>/ops/runbooks/*</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 12 · Team &amp; cost</div>
+    <h2>People + monthly recurring (steady state)</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>People (V1, blended offshore)</h4>
+        <table>
+          <tbody>
+            <tr><td>Tech lead</td><td>1.0 FTE</td></tr>
+            <tr><td>Senior full-stack</td><td>1.0</td></tr>
+            <tr><td>FE / CRO</td><td>0.5</td></tr>
+            <tr><td>Integrations / DevOps</td><td>0.5</td></tr>
+            <tr><td>Media buyer</td><td>1.0</td></tr>
+            <tr><td>Counsel (retainer)</td><td>0.2</td></tr>
+            <tr><td>Case workers</td><td>2.0</td></tr>
+            <tr><td>Callback agents</td><td>2.0</td></tr>
+            <tr><td>Content / SEO</td><td>0.5</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD 25-35k / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h4>Recurring infra / SaaS</h4>
+        <table>
+          <tbody>
+            <tr><td>Vercel + Cloudflare</td><td>~50</td></tr>
+            <tr><td>Supabase Pro</td><td>25-100</td></tr>
+            <tr><td>Twilio (volume)</td><td>200-1,000</td></tr>
+            <tr><td>n8n + Cal.com (Railway)</td><td>40-100</td></tr>
+            <tr><td>HubSpot</td><td>15 / seat</td></tr>
+            <tr><td>Sentry / BetterStack</td><td>50-100</td></tr>
+            <tr><td>GTM Server (Cloud Run)</td><td>30-80</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD ~500 - 1,800 / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 13 · Timeline</div>
+    <h2>8 weeks to soft launch</h2>
+    <div class="gantt">
+      <div class="gantt-row"><div>W1 Discovery</div><div class="gantt-bar"><span style="left:0%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W2 Quiz + auth</div><div class="gantt-bar"><span style="left:12.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W3 Booking + Twilio</div><div class="gantt-bar"><span style="left:25%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W4 Payments + cases</div><div class="gantt-bar"><span style="left:37.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W5 CRM + n8n + partners</div><div class="gantt-bar"><span style="left:50%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W6 Server-side conversions</div><div class="gantt-bar"><span style="left:62.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W7 Hardening + i18n</div><div class="gantt-bar"><span style="left:75%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W8 Soft launch</div><div class="gantt-bar"><span style="left:87.5%; width:12.5%"></span></div></div>
+    </div>
+    <p class="muted">Then: scale geos, layer organic SEO, add cross-sells (language test, remittance, travel insurance).</p>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 14 · KPIs &amp; risks</div>
+    <h2>What we watch + what can break</h2>
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Lighthouse PWA</div><div class="value">≥ 90</div></div>
+      <div class="kpi"><div class="label">5xx error rate</div><div class="value">< 0.5%</div></div>
+      <div class="kpi"><div class="label">P95 TTFB (IN edge)</div><div class="value">< 600 ms</div></div>
+      <div class="kpi"><div class="label">Hot-lead SLA</div><div class="value">< 5 min</div></div>
+      <div class="kpi"><div class="label">Package conversion</div><div class="value">6-12%</div></div>
+      <div class="kpi"><div class="label">Day-30 ROAS</div><div class="value">≥ 1.5x</div></div>
+    </div>
+    <h3 style="margin-top: 16px;">Top risks</h3>
+    <ul>
+      <li><strong>Ad-account suspensions</strong> → domain isolation, conservative claims, warmed accounts.</li>
+      <li><strong>Partner lead-quality disputes</strong> → stronger qualification + recordings + signed SOWs.</li>
+      <li><strong>Source-geo fraud / spam</strong> → reCAPTCHA + OTP + Cloudflare Bot Management.</li>
+      <li><strong>CPC inflation</strong> → diversify Microsoft Ads + native + organic SEO compounding.</li>
+    </ul>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 15 · Next steps</div>
+    <h2>Immediate decisions to unblock kickoff</h2>
+    <ol>
+      <li>Pick 2 migration partners (commercial terms + handoff API).</li>
+      <li>Confirm payments split: Stripe (USD) vs Razorpay (INR/UPI).</li>
+      <li>In-house case workers vs partial outsourcing.</li>
+      <li>Brand name + domain + design system.</li>
+      <li>Refund matrix and dispute SLAs.</li>
+      <li>Knowledge base in V1 or post Phase 2.</li>
+    </ol>
+    <p class="muted">Full engineering spec lives in <code>plans/visa-tech-spec.md</code> in the repo.</p>
+  </section>
+
+</main>
+
+<div class="controls">
+  <button class="btn" id="prevBtn">←</button>
+  <div class="counter" id="counter">1 / 15</div>
+  <button class="btn btn-primary" id="nextBtn">Next →</button>
+</div>
+
+<script src="./assets/deck.js"></script>
+</body>
+</html>

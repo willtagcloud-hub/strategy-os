@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Loans — Tech Deep Dive</title>
+<link rel="stylesheet" href="./assets/styles.css" />
+<style>
+  pre.codeblock {
+    background: #0b1226;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #c8d3ee;
+    font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    overflow: auto;
+    margin: 10px 0 4px;
+  }
+  pre.codeblock .c { color: #6f7aa1; }
+  pre.codeblock .k { color: #fbbf24; }
+  pre.codeblock .s { color: #a7f3d0; }
+  pre.codeblock .n { color: #fb923c; }
+  .gantt-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; margin: 4px 0; font-size: 13px; }
+  .gantt-bar { background: #1a2348; border-radius: 4px; height: 16px; position: relative; overflow: hidden; }
+  .gantt-bar > span { position: absolute; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 4px; }
+</style>
+</head>
+<body class="theme-loans">
+
+<div class="progress" id="progress"></div>
+<div class="topbar">
+  <div class="brand">Strategy OS · <b>Loans Tech Deep Dive</b></div>
+  <div style="display:flex; gap:8px; pointer-events:auto;">
+    <a class="home-link" href="./loans.html" title="Strategy view">← Strategy deck</a>
+    <a class="home-link" href="./index.html">All decks ↑</a>
+  </div>
+</div>
+
+<main class="deck">
+
+  <!-- 1 -->
+  <section class="slide title-slide">
+    <div class="eyebrow">Loans · Tech blueprint</div>
+    <h1>Credit &amp; Loan Match — Engineering Plan</h1>
+    <p class="tagline">Implementation-grade plan for a low-latency match engine, TCPA-grade consent ledger, multi-buyer ping-tree, and white-hat ad funnels for personal loans, debt consolidation, and refi.</p>
+    <div class="row" style="margin-top: 20px;">
+      <span class="tag">Cloudflare Workers + DO</span>
+      <span class="tag">Postgres + ClickHouse</span>
+      <span class="tag">TCPA-grade audit</span>
+      <span class="tag">Server-side conversions</span>
+    </div>
+    <p class="subnote">Companion to the strategy deck. Use ← / → to navigate.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 02 · Architecture</div>
+    <h2>System architecture</h2>
+    <pre class="codeblock"><span class="c">[Paid Ad / Search]</span>
+        ↓
+[<span class="k">Cloudflare</span> WAF + Bot Management]
+        ↓
+[<span class="k">Next.js</span> PWA on <span class="k">Vercel</span> (NA/EU edge)]
+   ├─ /quiz · /calculator · /offers · /handoff
+   └─ /api/quiz · /api/match · /api/optout · /api/conversions
+        ↓
+[<span class="k">Match Engine</span> on Cloudflare <span class="k">Workers</span> + <span class="k">Durable Objects</span>]
+   ├─ Validate + score
+   ├─ Filter buyers by <span class="k">JSON-Logic</span> rules
+   ├─ Parallel ping-tree (5-7 buyers, P95 ≤ 1.5 s)
+   └─ Pick winner, persist, post-lead
+        ↓
+[<span class="k">Postgres</span> (Supabase) + <span class="k">Redis</span> (Upstash)
+ + <span class="k">R2</span> immutable consent store + <span class="k">ClickHouse</span> bid log]
+        ↓
+   ├─ <span class="k">n8n</span>     → drips, dispositions, debt-relief routing
+   ├─ <span class="k">HubSpot</span> → debt-relief warm-transfer pipeline
+   ├─ <span class="k">Twilio</span>  → phone verify, voice consent, opt-out SMS
+   ├─ <span class="k">Plaid</span>   → income / employment (premium tier)
+   └─ Buyer APIs → ping/post lead, postbacks
+        ↓
+[Server-side: GA4 + GTM Server, Meta CAPI,
+ Google Enhanced Conv. for Leads, BigQuery + Metabase]</pre>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 03 · Tech stack</div>
+    <h2>Stack at a glance</h2>
+    <table>
+      <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Match engine</td><td>Cloudflare Workers + Durable Objects</td><td>Sub-second global ping-tree, atomic per-lead state</td></tr>
+        <tr><td>Bot mgmt / WAF</td><td>Cloudflare Pro + Bot Management</td><td>Fraud filter for finance forms</td></tr>
+        <tr><td>Framework</td><td>Next.js 14 (App Router)</td><td>Reuses Visa monorepo + quiz engine</td></tr>
+        <tr><td>DB / RLS</td><td>Supabase Postgres</td><td>Same infra as Visa</td></tr>
+        <tr><td>Bid analytics</td><td>ClickHouse Cloud</td><td>Per-bid, per-buyer, per-state queries</td></tr>
+        <tr><td>Audit store</td><td>Cloudflare R2 (write-once)</td><td>Immutable consent records</td></tr>
+        <tr><td>Voice / SMS</td><td>Twilio</td><td>TCPA-recordable consent + verification</td></tr>
+        <tr><td>Income data (V2)</td><td>Plaid</td><td>Premium-bid path</td></tr>
+        <tr><td>Workflow</td><td>n8n self-hosted</td><td>Routing without redeploys</td></tr>
+        <tr><td>CRM (debt relief)</td><td>HubSpot</td><td>Warm-transfer pipeline</td></tr>
+        <tr><td>Analytics</td><td>GA4 + GTM Server + BigQuery</td><td>Server-side first</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 04 · PWA</div>
+    <h2>PWA notes</h2>
+    <ul>
+      <li>Reuses the Visa quiz engine, just a different config.</li>
+      <li>Service worker: <strong>never cache</strong> <code>/api/match</code> or <code>/api/offers</code>.</li>
+      <li>Strict CSP nonces (no inline scripts) — reduces injected-form fraud.</li>
+      <li>"My Offers" view becomes a returning-user destination; push notifies status updates where buyers permit.</li>
+      <li>Phone verification gate before consent capture; binds the human to the lead.</li>
+    </ul>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 05 · Quiz funnel</div>
+    <h2>Soft-qualification flow</h2>
+    <ol>
+      <li>Loan purpose (debt, home improvement, auto, medical, life event, other).</li>
+      <li>Loan amount slider (USD 1k - 100k).</li>
+      <li>Credit band (excellent / good / fair / poor / not sure).</li>
+      <li>Annual income.</li>
+      <li>Employment type and length.</li>
+      <li>Housing (own/rent) + monthly housing cost.</li>
+      <li>State / ZIP (or postcode for UK).</li>
+      <li>Date of birth (gates underage).</li>
+      <li>Last-4 SSN — masked, encrypted, only sent to buyers requiring it.</li>
+      <li><strong>TCPA consent block</strong> — explicit, recorded, with full creative text.</li>
+      <li>Phone + email; phone verification SMS code.</li>
+      <li>(Optional) Plaid bank verification for premium-bid buyers.</li>
+    </ol>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 06 · Match engine</div>
+    <h2>Decision flow (target P95 ≤ 1.5 s)</h2>
+    <pre class="codeblock"><span class="c">// Cloudflare Worker · POST /api/match</span>
+validate(payload)
+fraud = botMgmt(payload, headers)
+<span class="k">if</span> (fraud > THRESHOLD) <span class="k">return</span> reject
+
+lead = persist(payload)            <span class="c">// includes consent_ledger + R2 audit</span>
+candidates = filter(buyers, lead)  <span class="c">// JSON-Logic rules</span>
+
+bids = <span class="k">await</span> Promise.allSettled(
+  candidates.map(b =>
+    fetchWithTimeout(b.endpoint, mapPayload(b, lead), <span class="n">800</span>) <span class="c">// ms</span>
+  )
+)
+
+winner = pickWinner(bids, rules)
+persist(bid_results)               <span class="c">// ClickHouse</span>
+
+<span class="k">if</span> (winner) post_lead(winner, lead) <span class="c">// HMAC-signed, TCPA proof attached</span>
+sendEvent(<span class="s">"lead_submitted"</span>, lead)
+
+<span class="k">return</span> offerResponse(winner)</pre>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 07 · Buyer config</div>
+    <h2>Buyers as data, not code</h2>
+    <pre class="codeblock"><span class="c">-- Postgres</span>
+<span class="k">create table</span> buyers (
+  id, slug, name, endpoint, auth_type,
+  request_template <span class="k">jsonb</span>,
+  response_path <span class="k">text</span>,
+  rules <span class="k">jsonb</span>,           <span class="c">-- {"min_fico":580,"max_amount":50000,"states":["CA","NY"]}</span>
+  active <span class="k">bool</span>, priority <span class="k">int</span>
+);</pre>
+    <p class="muted">Adding a buyer = inserting a row + mapping its fields. <code>json-logic-js</code> evaluates rules against each lead. No code deploy needed for routing changes.</p>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 08 · Data model</div>
+    <h2>Loan-specific tables (delta over Visa schema)</h2>
+    <pre class="codeblock"><span class="k">loan_leads</span>(id, user_id, purpose, amount_cents, fico_band,
+           income_cents, employment, housing, state, zip,
+           dob, ssn_last4, consent_text, consent_ip, ...)
+
+<span class="k">matches</span>(id, lead_id, winner_buyer_id, winner_bid_cents,
+        total_buyers_pinged, accepted_buyers, decision_ms, raw)
+
+<span class="k">postbacks</span>(id, buyer_id, lead_id, event,        <span class="c">-- accepted | applied | funded | rejected</span>
+          amount_cents, raw, received_at)
+
+<span class="k">consent_ledger</span>(id, user_id, type, channel, text_shown,
+              payload_hash, ip, user_agent, audio_url,
+              recorded_at)                            <span class="c">-- append-only</span>
+
+<span class="c">-- ClickHouse</span>
+<span class="k">bids</span>(ts, lead_id, buyer_id, bid_amount_cents,
+     accepted, rejected_reason, latency_ms)</pre>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 09 · Tracking</div>
+    <h2>Server-side conversions + reconciliation</h2>
+    <pre class="codeblock">view_calculator → quiz_started → quiz_step_completed
+→ phone_verified → <span class="n">consent_captured</span> → match_requested
+→ match_won (buyer_id, bid) → offer_clicked
+→ <span class="n">buyer_accepted</span> → <span class="n">buyer_funded</span> → debt_relief_handoff
+→ debt_relief_qualified → credit_monitoring_signup → optout</pre>
+    <ul>
+      <li>Meta CAPI optimizes <code>consent_captured</code> → switches to <code>buyer_accepted</code> at ≥ 50/wk.</li>
+      <li>Google Ads Enhanced Conversions for Leads on <code>buyer_funded</code> (value-based).</li>
+      <li><strong>Daily reconciliation</strong>: internal counts vs buyer reports; discrepancy &gt; 5% → Slack alert.</li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 10 · Compliance</div>
+    <h2>TCPA + state rules — the most important section</h2>
+    <ul class="checklist">
+      <li>Express written consent captured with: user data, exact disclosure text, timestamp, IP, UA.</li>
+      <li>Consent stored in <code>consent_ledger</code> + replicated to R2 write-once bucket.</li>
+      <li>Specific buyer disclosure at consent: every potential buyer named with link.</li>
+      <li>Voice consent path via Twilio <code>&lt;Record&gt;</code>; documented retention.</li>
+      <li>Two-party consent states (CA, FL, ...) → verbal confirmation at call start.</li>
+      <li>One-click opt-out endpoint; daily DNC scrub vs National DNC + internal + partner feeds.</li>
+      <li>NMLS-licensed lenders only (US); FCA partners only (UK); maintain license records.</li>
+      <li>No "guaranteed approval" / "no credit check" copy — counsel-reviewed creatives only.</li>
+      <li>PII column-encrypted with pgsodium; 90-day default retention for non-funded leads.</li>
+      <li>CCPA right-to-opt-out-of-sale wired into opt-out endpoint.</li>
+    </ul>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 11 · Callback ops</div>
+    <h2>Default self-serve, callback only on fallback</h2>
+    <ul>
+      <li>Primary flow: PWA → match → click-out to buyer (no human required).</li>
+      <li>Callback triggers when the lead <strong>fails the loan match</strong> but qualifies for debt relief or credit monitoring.</li>
+      <li>n8n routes the lead into HubSpot's Debt Relief pipeline.</li>
+      <li>Twilio click-to-call within 60 s of disposition; recordings retained 30 days.</li>
+      <li>State-specific TCPA scripts; never auto-dial without timestamped express consent.</li>
+    </ul>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 12 · DevOps</div>
+    <h2>Build, ship, observe</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>Pipeline</h4>
+        <ul>
+          <li>GitHub Actions: lint → types → unit → e2e + load (200 RPS sustain) → deploy.</li>
+          <li>Lighthouse PWA ≥ 90 required.</li>
+          <li>Preview env per PR; Supabase branch databases.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>SLOs &amp; alerts</h4>
+        <ul>
+          <li>Match endpoint P95 ≤ 1.5 s; breach for 5 min → page.</li>
+          <li>Per-buyer accept rate &lt; 50% for 1 h → Slack alert.</li>
+          <li>DNC scrub freshness must be &lt; 24 h.</li>
+          <li>Consent ledger weekly checksum; offsite (R2) backup.</li>
+          <li>Daily Postgres logical backup; RPO 15 min, RTO 1 h.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 13 · Team &amp; cost</div>
+    <h2>People + monthly recurring (steady state)</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>People (V1, blended offshore)</h4>
+        <table>
+          <tbody>
+            <tr><td>Tech lead (ping-tree exp.)</td><td>1.0 FTE</td></tr>
+            <tr><td>Senior full-stack</td><td>1.0</td></tr>
+            <tr><td>FE / CRO</td><td>0.5</td></tr>
+            <tr><td>Compliance / counsel</td><td>0.5</td></tr>
+            <tr><td>Media buyer (Search-first)</td><td>1.0</td></tr>
+            <tr><td>Debt-relief agents</td><td>1-2</td></tr>
+            <tr><td>Data analyst</td><td>0.5</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD 22-32k / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h4>Recurring infra / SaaS</h4>
+        <table>
+          <tbody>
+            <tr><td>Vercel + Cloudflare (Workers/DO)</td><td>70-250</td></tr>
+            <tr><td>Supabase Pro</td><td>25-100</td></tr>
+            <tr><td>ClickHouse Cloud (small)</td><td>50-150</td></tr>
+            <tr><td>Twilio (verify + voice + opt-out)</td><td>200-1,000</td></tr>
+            <tr><td>Plaid (V2)</td><td>0-300</td></tr>
+            <tr><td>HubSpot</td><td>15 / seat</td></tr>
+            <tr><td>Sentry / BetterStack / Logflare</td><td>50-200</td></tr>
+            <tr><td><b>Total</b></td><td><b>USD ~500 - 2,100 / mo</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 14 · Timeline + rollout</div>
+    <h2>8 weeks to soft launch</h2>
+    <div>
+      <div class="gantt-row"><div>W1 Quiz + score</div><div class="gantt-bar"><span style="left:0%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W2 Buyer table + 2 integrations</div><div class="gantt-bar"><span style="left:12.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W3 Match engine (Workers/DO)</div><div class="gantt-bar"><span style="left:25%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W4 TCPA consent + opt-out + DNC</div><div class="gantt-bar"><span style="left:37.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W5 Postbacks + reconciliation</div><div class="gantt-bar"><span style="left:50%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W6 Server-side conversions</div><div class="gantt-bar"><span style="left:62.5%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W7 Pen-test + counsel sign-off + load</div><div class="gantt-bar"><span style="left:75%; width:12.5%"></span></div></div>
+      <div class="gantt-row"><div>W8 Soft launch (3 US states + UK)</div><div class="gantt-bar"><span style="left:87.5%; width:12.5%"></span></div></div>
+    </div>
+    <p class="muted">Phase 2: scale to 5-7 buyers, add debt-relief warm-transfer fallback, scale spend to USD 15-20k/mo.</p>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide">
+    <div class="eyebrow">Slide 15 · KPIs &amp; risks</div>
+    <h2>What we watch + top risks</h2>
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Match P95 latency</div><div class="value">≤ 1.5 s</div></div>
+      <div class="kpi"><div class="label">Lead acceptance</div><div class="value">≥ 80%</div></div>
+      <div class="kpi"><div class="label">Funded rate</div><div class="value">5-12%</div></div>
+      <div class="kpi"><div class="label">CPA target</div><div class="value">USD 60-180</div></div>
+      <div class="kpi"><div class="label">Day-7 ROAS</div><div class="value">≥ 1.2x</div></div>
+      <div class="kpi"><div class="label">Refund / dispute</div><div class="value">< 2%</div></div>
+    </div>
+    <h3 style="margin-top: 16px;">Top risks</h3>
+    <ul>
+      <li><strong>TCPA litigation</strong> → counsel-reviewed disclosures, immutable ledger, voice consent path.</li>
+      <li><strong>Buyer policy changes</strong> → 5+ buyer integrations, dynamic routing.</li>
+      <li><strong>Lead fraud / form-stuffing</strong> → Cloudflare Bot Mgmt + phone verify + soft pull.</li>
+      <li><strong>Reconciliation gaps</strong> → daily auto-reconcile + alerts.</li>
+      <li><strong>Conversion-attribution loss</strong> → server-side first; rebuild via warehouse.</li>
+    </ul>
+    <p class="muted" style="margin-top: 14px;">Full engineering spec lives in <code>plans/loans-tech-spec.md</code> in the repo.</p>
+  </section>
+
+</main>
+
+<div class="controls">
+  <button class="btn" id="prevBtn">←</button>
+  <div class="counter" id="counter">1 / 15</div>
+  <button class="btn btn-primary" id="nextBtn">Next →</button>
+</div>
+
+<script src="./assets/deck.js"></script>
+</body>
+</html>
